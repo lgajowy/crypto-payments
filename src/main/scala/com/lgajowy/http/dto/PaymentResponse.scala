@@ -1,4 +1,4 @@
-package com.lgajowy
+package com.lgajowy.http.dto
 
 import java.util.UUID
 

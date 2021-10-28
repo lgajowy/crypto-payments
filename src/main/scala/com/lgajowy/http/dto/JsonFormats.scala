@@ -1,8 +1,7 @@
-package com.lgajowy.http
+package com.lgajowy.http.dto
 
-import com.lgajowy._
 import spray.json.DefaultJsonProtocol._
-import spray.json._
+import spray.json.{ DeserializationException, JsString, JsValue, JsonFormat }
 
 import java.util.UUID
 

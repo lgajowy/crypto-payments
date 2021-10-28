@@ -1,10 +1,10 @@
 package com.lgajowy.http
 
-import com.lgajowy.{ MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.spray.jsonBody
-import JsonFormats._
+import com.lgajowy.http.dto.JsonFormats._
+import com.lgajowy.http.dto.{MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse}
 import sttp.model.StatusCode.Created
 
 import java.util.UUID

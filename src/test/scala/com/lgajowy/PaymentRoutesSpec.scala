@@ -1,19 +1,18 @@
 package com.lgajowy
 
-import akka.http.scaladsl.model.{ ContentTypes, HttpRequest, MessageEntity, StatusCodes }
+import akka.http.scaladsl.model.{ContentTypes, HttpRequest, MessageEntity, StatusCodes}
 import akka.util.Timeout
-import com.lgajowy.http.PaymentRoutes
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import com.lgajowy.http.JsonFormats._
+import com.lgajowy.http.dto.JsonFormats._
+import com.lgajowy.http.dto.{MultiplePaymentsResponse, PaymentRequest}
 
 class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 

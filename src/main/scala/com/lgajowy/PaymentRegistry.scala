@@ -1,8 +1,9 @@
 package com.lgajowy
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ ActorRef, Behavior }
+import akka.actor.typed.{ActorRef, Behavior}
 import com.lgajowy.domain.Payment
+import com.lgajowy.http.dto.PaymentRequest
 
 import java.util.UUID
 import scala.concurrent.Future
