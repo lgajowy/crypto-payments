@@ -26,7 +26,7 @@ object CryptoPaymentsApp {
     val rootBehavior = Behaviors.setup[Nothing] { context =>
       val userRegistryActor = context.spawn(UserRegistry(), "UserRegistryActor")
       context.watch(userRegistryActor)
-      startHttpServer(http.Routing.allRoutes)(context.system)
+      startHttpServer(http.routing.routes)(context.system)
 
       Behaviors.empty
     }

@@ -1,7 +1,7 @@
 package com.lgajowy.http
 
-import com.lgajowy.{ JsonFormats, PaymentRequest, PaymentResponse }
-import sttp.tapir.{ Endpoint, endpoint, path, statusCode }
+import com.lgajowy.{ JsonFormats, MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
+import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.spray.jsonBody
 import JsonFormats._
@@ -11,16 +11,25 @@ import java.util.UUID
 
 object endpoints {
 
-  private val payment: Endpoint[Unit, Unit, Unit, Any] = endpoint.in("payment")
-
   val getPayment: Endpoint[UUID, Unit, PaymentResponse, Any] =
-    payment.get
-      .in(path[UUID])
+    endpoint.get
+      .in("payment" / path[UUID])
       .out(jsonBody[PaymentResponse])
 
-  val postPayment: Endpoint[PaymentRequest, Unit, Unit, Any] = payment.post
-    .in("new")
-    .in(jsonBody[PaymentRequest])
-    .out(statusCode(Created))
+  val postPayment: Endpoint[PaymentRequest, Unit, Unit, Any] =
+    endpoint.post
+      .in("payment" / "new")
+      .in(jsonBody[PaymentRequest])
+      .out(statusCode(Created))
+
+  val getPayments: Endpoint[String, Unit, MultiplePaymentsResponse, Any] =
+    endpoint.get
+      .in("payments" / query[String]("currency"))
+      .out(jsonBody[MultiplePaymentsResponse])
+
+  val getPaymentsStats: Endpoint[String, Unit, StatsResponse, Any] =
+    endpoint.get
+      .in("payments" / "stats" / query[String]("currency"))
+      .out(jsonBody[StatsResponse])
 
 }
