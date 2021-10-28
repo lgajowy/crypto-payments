@@ -28,7 +28,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
     Timeout.create(system.settings.config.getDuration("my-app.routes.ask-timeout"))
 
   "Payment routes" should {
-    "return no payments when there is no payments of a given currency in the db" in {
+    "respond with no payments when there is no payments of a given currency in the db" in {
       val request = HttpRequest(uri = "/payments?currency=PLN")
 
       request ~> routes ~> check {
@@ -39,7 +39,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
     }
 
     // TODO: This should be returning 404
-    "return no payment when there is no payment with the searched UUID" in {
+    "respond with no payment when there is no payment with the searched UUID" in {
       val request = HttpRequest(uri = "/payment/8ab3e8be-382b-11ec-8d3d-0242ac130003")
 
       request ~> routes ~> check {
@@ -49,7 +49,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
 
     // TODO: Create GenUUID typeclass. Have a production and test interpreter.
     //  Test interpreter will generate deterministically. Thanks to that It will be easier to test cases like below.
-    "return previously added payment " in {
+    "respond with previously added payment " in {
       val paymentEntity = Marshal(PaymentRequest(BigDecimal(1), "USD", "BTC")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
