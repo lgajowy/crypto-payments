@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 object CryptoPaymentsApp {
 
@@ -26,7 +26,7 @@ object CryptoPaymentsApp {
     val rootBehavior = Behaviors.setup[Nothing] { context =>
       val userRegistryActor = context.spawn(UserRegistry(), "UserRegistryActor")
       context.watch(userRegistryActor)
-      startHttpServer(http.Routing.getPayment)(context.system)
+      startHttpServer(http.Routing.allRoutes)(context.system)
 
       Behaviors.empty
     }

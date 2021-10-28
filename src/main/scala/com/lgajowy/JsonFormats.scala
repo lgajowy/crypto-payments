@@ -20,5 +20,6 @@ object JsonFormats {
   implicit val usersJsonFormat = jsonFormat1(Users)
   implicit val actionPerformedJsonFormat = jsonFormat1(ActionPerformed)
   implicit val paymentResponseFormat = jsonFormat1(PaymentResponse)
+  implicit val paymentRequestFormat = jsonFormat3(PaymentRequest)
 
 }
