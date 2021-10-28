@@ -1,6 +1,5 @@
 package com.lgajowy.http
 
-import com.lgajowy.UserRegistry.ActionPerformed
 import com.lgajowy._
 import spray.json.DefaultJsonProtocol._
 import spray.json._
@@ -17,9 +16,6 @@ object JsonFormats {
     }
   }
 
-  implicit val userJsonFormat = jsonFormat3(User)
-  implicit val usersJsonFormat = jsonFormat1(Users)
-  implicit val actionPerformedJsonFormat = jsonFormat1(ActionPerformed)
   implicit val paymentResponseFormat = jsonFormat1(PaymentResponse)
   implicit val paymentRequestFormat = jsonFormat3(PaymentRequest)
   implicit val multiplePaymentsResponseFormat = jsonFormat1(MultiplePaymentsResponse)
