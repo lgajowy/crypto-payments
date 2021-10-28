@@ -10,7 +10,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class RoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
+class UserRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 
   lazy val testKit: ActorTestKit = ActorTestKit()
   implicit def typedSystem: ActorSystem[Nothing] = testKit.system
@@ -18,7 +18,7 @@ class RoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with Scalat
     testKit.system.classicSystem
 
   val userRegistry: ActorRef[UserRegistry.Command] = testKit.spawn(UserRegistry())
-  lazy val routes: Route = new Routes(userRegistry).userRoutes
+  lazy val routes: Route = new UserRoutes(userRegistry).userRoutes
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
   import JsonFormats._
