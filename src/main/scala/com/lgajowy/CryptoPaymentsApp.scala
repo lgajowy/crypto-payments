@@ -4,8 +4,9 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
+import com.lgajowy.http.PaymentRoutes
 
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 object CryptoPaymentsApp {
 
@@ -24,12 +25,15 @@ object CryptoPaymentsApp {
   }
   def main(args: Array[String]): Unit = {
     val rootBehavior = Behaviors.setup[Nothing] { context =>
-      val userRegistryActor = context.spawn(UserRegistry(), "UserRegistryActor")
-      context.watch(userRegistryActor)
-      startHttpServer(http.routing.routes)(context.system)
+
+      val paymentRegistryActor = context.spawn(PaymentRegistry(), "PaymentsRegistryActor")
+      context.watch(paymentRegistryActor)
+
+      val routes = new PaymentRoutes(paymentRegistryActor)(context.system)
+      startHttpServer(routes.allRoutes)(context.system)
 
       Behaviors.empty
     }
-    ActorSystem[Nothing](rootBehavior, "HelloAkkaHttpServer")
+    ActorSystem[Nothing](rootBehavior, "PaymentRegistryHttpServer")
   }
 }

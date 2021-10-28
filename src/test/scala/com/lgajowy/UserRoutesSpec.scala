@@ -21,7 +21,7 @@ class UserRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with Sc
   lazy val routes: Route = new UserRoutes(userRegistry).userRoutes
 
   import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-  import JsonFormats._
+  import com.lgajowy.http.JsonFormats._
 
   "UserRoutes" should {
     "return no users if no present (GET /users)" in {

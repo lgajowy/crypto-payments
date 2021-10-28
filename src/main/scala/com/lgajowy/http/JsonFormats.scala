@@ -1,6 +1,7 @@
-package com.lgajowy
+package com.lgajowy.http
 
 import com.lgajowy.UserRegistry.ActionPerformed
+import com.lgajowy._
 import spray.json.DefaultJsonProtocol._
 import spray.json.{ DeserializationException, JsString, JsValue, JsonFormat }
 

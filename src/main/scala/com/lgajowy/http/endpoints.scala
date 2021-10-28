@@ -1,6 +1,6 @@
 package com.lgajowy.http
 
-import com.lgajowy.{ JsonFormats, MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
+import com.lgajowy.{ MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.spray.jsonBody
