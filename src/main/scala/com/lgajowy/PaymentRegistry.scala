@@ -1,12 +1,12 @@
 package com.lgajowy
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.{ ActorRef, Behavior }
 import com.lgajowy.domain.Payment
 import com.lgajowy.http.dto.PaymentRequest
+import com.lgajowy.persistence.DB
 
 import java.util.UUID
-import scala.concurrent.Future
 
 object PaymentRegistry {
 
@@ -26,7 +26,7 @@ object PaymentRegistry {
   private def registry(): Behavior[Command] =
     Behaviors.receiveMessage {
       case GetPayments(currency, replyTo) =>
-        replyTo ! GetPaymentsResponse(DB.payments.filter(_.fiatCurrency == currency))
+        replyTo ! GetPaymentsResponse(DB.selectPaymentsByFiatCurrency(currency))
         Behaviors.same
       case CreatePayment(request, replyTo) => {
         val payment = Payment(
@@ -37,26 +37,17 @@ object PaymentRegistry {
           request.coinCurrency
         )
 
-        DB.payments = DB.payments :+ payment
+        DB.insertPayment(payment)
         replyTo ! PaymentCreated()
       }
       Behaviors.same
     case GetPayment(id, replyTo) =>
-        replyTo ! GetPaymentResponse(DB.payments.find(_.id == id))
+        replyTo ! GetPaymentResponse(DB.selectPaymentById(id))
         Behaviors.same
 
-      case GetPaymentsStats(currency, replyTo) => {
-        val count = DB.payments.count(_.fiatCurrency == currency)
+      case GetPaymentsStats(currency, replyTo) =>
+        val count = DB.countPaymentsByFiatCurrency(currency)
         replyTo ! GetPaymentsStatsResponse(count)
         Behaviors.same
-      }
     }
-
-  // TODO: Take care so that it can be shared between multiple actors
-  object DB {
-    val fiatCurrencies: List[String] = List("EUR", "USD")
-    val cryptoCurrencies: List[String] = List("BTC")
-    var payments: List[Payment] = List.empty
-  }
-
 }

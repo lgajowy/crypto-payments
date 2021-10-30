@@ -1,13 +1,13 @@
 package com.lgajowy
 
-import akka.actor.typed.{ActorRef, ActorSystem}
-import akka.actor.typed.scaladsl.AskPattern.{Askable, _}
+import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.actor.typed.scaladsl.AskPattern.{ Askable, _ }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
-import com.lgajowy.PaymentRegistry.{CreatePayment, GetPayment, GetPayments, GetPaymentsStats}
+import com.lgajowy.PaymentRegistry.{ CreatePayment, GetPayment, GetPayments, GetPaymentsStats }
 import com.lgajowy.domain.Payment
-import com.lgajowy.http.dto.{MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse}
+import com.lgajowy.http.dto.{ MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
 import com.lgajowy.http.endpoints
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 
