@@ -8,8 +8,10 @@ final case class PaymentResponse(
   id: UUID
 )
 
-object PaymentResponse{
-  def fromDomain(payment: Payment): PaymentResponse = PaymentResponse(payment.id)
+object PaymentResponse {
+  def fromDomain(payment: Payment): PaymentResponse = PaymentResponse(
+    payment.id.value
+  )
 }
 
 final case class MultiplePaymentsResponse(

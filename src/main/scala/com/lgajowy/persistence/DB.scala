@@ -1,6 +1,6 @@
 package com.lgajowy.persistence
 
-import com.lgajowy.domain.Payment
+import com.lgajowy.domain.{CoinCurrency, FiatCurrency, Payment, PaymentId}
 
 import java.util.UUID
 
@@ -14,14 +14,14 @@ object DB {
     payments = payments :+ payment
   }
 
-  def selectPaymentsByFiatCurrency(currency: String): List[Payment] =
+  def selectPaymentsByFiatCurrency(currency: FiatCurrency): List[Payment] =
     payments.filter(_.fiatCurrency == currency)
 
-  def selectPaymentById(id: UUID): Option[Payment] = payments.find(_.id == id)
+  def selectPaymentById(id: PaymentId): Option[Payment] = payments.find(_.id == id)
 
-  def countPaymentsByFiatCurrency(currency: String): Int = payments.count(_.fiatCurrency == currency)
+  def countPaymentsByFiatCurrency(currency: FiatCurrency): Int = payments.count(_.fiatCurrency == currency)
 
-  def selectSupportedCryptoCurrencies(): List[String] = cryptoCurrencies
+  def selectSupportedCryptoCurrencies(): List[CoinCurrency] = cryptoCurrencies.map(CoinCurrency)
 
-  def selectSupportedFiatCurrencies(): List[String] = fiatCurrencies
+  def selectSupportedFiatCurrencies(): List[FiatCurrency] = fiatCurrencies.map(FiatCurrency)
 }

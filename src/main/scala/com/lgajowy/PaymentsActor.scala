@@ -2,8 +2,8 @@ package com.lgajowy
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
-import com.lgajowy.domain.Payment
-import com.lgajowy.http.dto.{MultiplePaymentsResponse, PaymentRequest, PaymentResponse}
+import com.lgajowy.domain.{Payment, PaymentId}
+import com.lgajowy.http.dto.{FiatCurrencyRequest, MultiplePaymentsResponse, PaymentRequest, PaymentResponse}
 import com.lgajowy.persistence.DB
 
 import java.util.UUID
@@ -11,8 +11,8 @@ import java.util.UUID
 object PaymentsActor {
 
   sealed trait Command
-  final case class GetPayments(currency: String, replyTo: ActorRef[GetPaymentsResponse]) extends Command
-  final case class GetPaymentsStats(currency: String, replyTo: ActorRef[GetPaymentsStatsResponse]) extends Command
+  final case class GetPayments(currency: FiatCurrencyRequest, replyTo: ActorRef[GetPaymentsResponse]) extends Command
+  final case class GetPaymentsStats(currency: FiatCurrencyRequest, replyTo: ActorRef[GetPaymentsStatsResponse]) extends Command
   final case class CreatePayment(payment: PaymentRequest, replyTo: ActorRef[PaymentCreationResponse]) extends Command
   final case class GetPayment(id: UUID, replyTo: ActorRef[GetPaymentResponse]) extends Command
 
@@ -35,16 +35,16 @@ object PaymentsActor {
         Behaviors.same
 
       case GetPayments(currency, replyTo) =>
-        val payments: List[PaymentResponse] = paymentRegistry.getPayments(currency).map(PaymentResponse.fromDomain)
+        val payments: List[PaymentResponse] = paymentRegistry.getPayments(currency.toDomain()).map(PaymentResponse.fromDomain)
         replyTo ! GetPaymentsResponse(MultiplePaymentsResponse(payments))
         Behaviors.same
 
       case GetPayment(id, replyTo) =>
-        replyTo ! GetPaymentResponse(DB.selectPaymentById(id))
+        replyTo ! GetPaymentResponse(DB.selectPaymentById(PaymentId(id)))
         Behaviors.same
 
       case GetPaymentsStats(currency, replyTo) =>
-        val count = DB.countPaymentsByFiatCurrency(currency)
+        val count = DB.countPaymentsByFiatCurrency(currency.toDomain())
         replyTo ! GetPaymentsStatsResponse(count)
         Behaviors.same
     }

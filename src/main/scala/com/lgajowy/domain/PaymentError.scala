@@ -4,12 +4,12 @@ sealed trait PaymentError {
   def message: String
 }
 
-case class OutOfEURPriceRange(amount: BigDecimal) extends PaymentError {
-  def message = s"The price is out of range. Price: $amount"
+case class OutOfEURPriceRange(amount: FiatAmount) extends PaymentError {
+  def message = s"The price is out of range. Price: ${amount.value}"
 }
-case class UnsupportedFiatCurrency(currency: String) extends PaymentError {
-  def message = s"Unsupported fiat currency: $currency"
+case class UnsupportedFiatCurrency(currency: FiatCurrency) extends PaymentError {
+  def message = s"Unsupported fiat currency: ${currency.value}"
 }
-case class UnsupportedCryptoCurrency(currency: String) extends PaymentError {
-  def message = s"Unsupported crypto currency: $currency"
+case class UnsupportedCryptoCurrency(currency: CoinCurrency) extends PaymentError {
+  def message = s"Unsupported crypto currency: ${currency.value}"
 }

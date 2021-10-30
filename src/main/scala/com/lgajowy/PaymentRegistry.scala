@@ -19,7 +19,7 @@ class PaymentRegistry(config: PaymentConfig) {
       .map(
         request =>
           Payment(
-            UUID.randomUUID(),
+            PaymentId(UUID.randomUUID()),
             request.fiatAmount,
             request.fiatCurrency,
             convert(request.fiatAmount, request.fiatCurrency, request.coinCurrency),
@@ -33,30 +33,30 @@ class PaymentRegistry(config: PaymentConfig) {
   }
 
   // TODO: Implement
-  def convert(fiatAmount: BigDecimal, fiatCurrency: String, coinCurrency: String): BigDecimal = fiatAmount
+  def convert(fiatAmount: FiatAmount, fiatCurrency: FiatCurrency, coinCurrency: CoinCurrency): CoinAmount = CoinAmount(fiatAmount.value)
 
-  private def validatePriceRange(fiatAmount: BigDecimal): ValidationResult[BigDecimal] =
-    if (fiatAmount > config.minEurAmount && fiatAmount < config.maxEurAmount) {
+  private def validatePriceRange(fiatAmount: FiatAmount): ValidationResult[FiatAmount] =
+    if (fiatAmount.value > config.minEurAmount && fiatAmount.value < config.maxEurAmount) {
       fiatAmount.validNec
     } else {
       OutOfEURPriceRange(fiatAmount).invalidNec
     }
 
-  private def validateCryptoCurrencySupport(coinCurrency: String): ValidationResult[String] =
+  private def validateCryptoCurrencySupport(coinCurrency: CoinCurrency): ValidationResult[CoinCurrency] =
     if (DB.selectSupportedCryptoCurrencies().contains(coinCurrency)) {
       coinCurrency.validNec
     } else {
       UnsupportedCryptoCurrency(coinCurrency).invalidNec
     }
 
-  private def validateFiatCurrencySupport(fiatCurrency: String): ValidationResult[String] =
+  private def validateFiatCurrencySupport(fiatCurrency: FiatCurrency): ValidationResult[FiatCurrency] =
     if (DB.selectSupportedFiatCurrencies().contains(fiatCurrency)) {
       fiatCurrency.validNec
     } else {
       UnsupportedFiatCurrency(fiatCurrency).invalidNec
     }
 
-  def getPayments(currency: String): List[Payment] = {
+  def getPayments(currency: FiatCurrency): List[Payment] = {
     DB.selectPaymentsByFiatCurrency(currency)
   }
 }
