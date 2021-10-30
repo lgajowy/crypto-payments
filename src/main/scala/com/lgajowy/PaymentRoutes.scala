@@ -10,18 +10,18 @@ import com.lgajowy.domain.Payment
 import com.lgajowy.http.dto.{ MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
 import com.lgajowy.http.endpoints
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
+import scala.jdk.DurationConverters._
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 // TODO: Error handling
-class PaymentRoutes(paymentRegistry: ActorRef[PaymentRegistry.Command])(implicit val system: ActorSystem[_]) {
+class PaymentRoutes(config: RoutesConfiguration, paymentRegistry: ActorRef[PaymentRegistry.Command])(implicit val system: ActorSystem[_]) {
 
   private val interpreter: AkkaHttpServerInterpreter = AkkaHttpServerInterpreter()
 
-  private implicit val timeout: Timeout =
-    Timeout.create(system.settings.config.getDuration("my-app.routes.ask-timeout"))
+  private implicit val timeout: Timeout = Timeout.create(config.askTimeout.toJava)
 
   def createPayment(request: PaymentRequest): Future[Either[Unit, Unit]] = {
     paymentRegistry.ask(CreatePayment(request, _)).map(_ => Right(()))

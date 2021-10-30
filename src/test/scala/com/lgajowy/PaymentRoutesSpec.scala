@@ -1,10 +1,10 @@
 package com.lgajowy
 
-import akka.http.scaladsl.model.{ContentTypes, HttpRequest, MessageEntity, StatusCodes}
+import akka.http.scaladsl.model.{ ContentTypes, HttpRequest, MessageEntity, StatusCodes }
 import akka.util.Timeout
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.actor.typed.{ActorRef, ActorSystem}
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -12,7 +12,9 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.lgajowy.http.dto.JsonFormats._
-import com.lgajowy.http.dto.{MultiplePaymentsResponse, PaymentRequest}
+import com.lgajowy.http.dto.{ MultiplePaymentsResponse, PaymentRequest }
+import pureconfig.generic.auto._
+import pureconfig.ConfigSource
 
 class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 
@@ -21,11 +23,16 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
   override def createActorSystem(): akka.actor.ActorSystem =
     testKit.system.classicSystem
 
+  val configuration: Configuration = ConfigSource.default.load[Configuration].fold (
+    error => throw new RuntimeException(error.toString()),
+    config => config
+  )
+
   val paymentRegistry: ActorRef[PaymentRegistry.Command] = testKit.spawn(PaymentRegistry())
-  lazy val routes: Route = new PaymentRoutes(paymentRegistry).allRoutes
+  lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentRegistry).allRoutes
 
   private implicit val timeout: Timeout =
-    Timeout.create(system.settings.config.getDuration("my-app.routes.ask-timeout"))
+    Timeout.create(system.settings.config.getDuration("routes.ask-timeout"))
 
   "Payment routes" should {
     "respond with no payments when there is no payments of a given currency in the db" in {

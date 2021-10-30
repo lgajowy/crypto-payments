@@ -19,6 +19,7 @@ lazy val root = (project in file(".")).settings(
     "com.softwaremill.sttp.tapir" %% "tapir-json-spray" % "0.19.0-M13",
     "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % "0.19.0-M13",
     "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % "0.19.0-M13",
+    "com.github.pureconfig" %% "pureconfig" % "0.17.0",
     "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
     "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion % Test,
     "org.scalatest" %% "scalatest" % "3.1.4" % Test
