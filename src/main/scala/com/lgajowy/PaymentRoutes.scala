@@ -10,6 +10,7 @@ import com.lgajowy.domain.FiatCurrency
 import com.lgajowy.http.dto.{
   FiatCurrencyRequest,
   MultiplePaymentsResponse,
+  PaymentIdRequest,
   PaymentRequest,
   PaymentResponse,
   StatsResponse
@@ -22,7 +23,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.DurationConverters._
 
-// TODO: Error handling
 class PaymentRoutes(config: RoutesConfiguration, paymentsActor: ActorRef[PaymentsActor.Command])(
   implicit val system: ActorSystem[_]
 ) {
@@ -37,10 +37,10 @@ class PaymentRoutes(config: RoutesConfiguration, paymentsActor: ActorRef[Payment
       .map(_.result)
   }
 
-  def getPayment(id: UUID): Future[Either[Unit, PaymentResponse]] = {
+  def getPayment(id: UUID): Future[Either[ErrorInfo, PaymentResponse]] = {
     paymentsActor
-      .ask(GetPayment(id, _))
-      .flatMap(response => Future.successful(response.maybePayment.map(PaymentResponse.fromDomain).toRight(())))
+      .ask(GetPayment(PaymentIdRequest(id), _))
+      .map(_.result)
   }
 
   def getPayments(currency: String): Future[Either[Unit, MultiplePaymentsResponse]] = {

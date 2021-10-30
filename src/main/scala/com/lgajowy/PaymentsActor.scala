@@ -1,9 +1,15 @@
 package com.lgajowy
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorRef, Behavior}
-import com.lgajowy.domain.{Payment, PaymentId}
-import com.lgajowy.http.dto.{FiatCurrencyRequest, MultiplePaymentsResponse, PaymentRequest, PaymentResponse}
+import akka.actor.typed.{ ActorRef, Behavior }
+import com.lgajowy.domain.{ Payment, PaymentId, PaymentNotFound }
+import com.lgajowy.http.dto.{
+  FiatCurrencyRequest,
+  MultiplePaymentsResponse,
+  PaymentIdRequest,
+  PaymentRequest,
+  PaymentResponse
+}
 import com.lgajowy.persistence.DB
 
 import java.util.UUID
@@ -12,11 +18,12 @@ object PaymentsActor {
 
   sealed trait Command
   final case class GetPayments(currency: FiatCurrencyRequest, replyTo: ActorRef[GetPaymentsResponse]) extends Command
-  final case class GetPaymentsStats(currency: FiatCurrencyRequest, replyTo: ActorRef[GetPaymentsStatsResponse]) extends Command
+  final case class GetPaymentsStats(currency: FiatCurrencyRequest, replyTo: ActorRef[GetPaymentsStatsResponse])
+    extends Command
   final case class CreatePayment(payment: PaymentRequest, replyTo: ActorRef[PaymentCreationResponse]) extends Command
-  final case class GetPayment(id: UUID, replyTo: ActorRef[GetPaymentResponse]) extends Command
+  final case class GetPayment(id: PaymentIdRequest, replyTo: ActorRef[GetPaymentResponse]) extends Command
 
-  final case class GetPaymentResponse(maybePayment: Option[Payment])
+  final case class GetPaymentResponse(result: Either[ErrorInfo, PaymentResponse])
   final case class GetPaymentsStatsResponse(paymentCount: Int)
   final case class GetPaymentsResponse(result: MultiplePaymentsResponse)
   final case class PaymentCreationResponse(result: Either[ErrorInfo, Unit])
@@ -35,12 +42,19 @@ object PaymentsActor {
         Behaviors.same
 
       case GetPayments(currency, replyTo) =>
-        val payments: List[PaymentResponse] = paymentRegistry.getPayments(currency.toDomain()).map(PaymentResponse.fromDomain)
+        val payments: List[PaymentResponse] =
+          paymentRegistry.getPayments(currency.toDomain()).map(PaymentResponse.fromDomain)
         replyTo ! GetPaymentsResponse(MultiplePaymentsResponse(payments))
         Behaviors.same
 
       case GetPayment(id, replyTo) =>
-        replyTo ! GetPaymentResponse(DB.selectPaymentById(PaymentId(id)))
+        val searchResult: Either[ErrorInfo, PaymentResponse] = paymentRegistry
+          .findPayment(id.toDomain())
+          .map(PaymentResponse.fromDomain)
+          .left
+          .map(ErrorInfo.fromPaymentError)
+
+        replyTo ! GetPaymentResponse(searchResult)
         Behaviors.same
 
       case GetPaymentsStats(currency, replyTo) =>

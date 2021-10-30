@@ -49,12 +49,11 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       }
     }
 
-    // TODO: This should be returning 404
     "respond with no payment when there is no payment with the searched UUID" in {
       val request = HttpRequest(uri = "/payment/8ab3e8be-382b-11ec-8d3d-0242ac130003")
 
       request ~> routes ~> check {
-        status should ===(StatusCodes.BadRequest)
+        status should ===(StatusCodes.NotFound)
       }
     }
 

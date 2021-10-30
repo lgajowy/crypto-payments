@@ -8,9 +8,10 @@ import com.lgajowy.persistence.DB
 import java.util.UUID
 
 class PaymentRegistry(config: PaymentConfig) {
-  private type ValidationResult[A] = ValidatedNec[PaymentError, A]
 
-  def createPayment(paymentToCreate: PaymentToCreate): Either[List[PaymentError], Unit] = {
+  private type ValidationResult[A] = ValidatedNec[PaymentRequestValidationError, A]
+
+  def createPayment(paymentToCreate: PaymentToCreate): Either[List[PaymentRequestValidationError], Unit] = {
     (
       validatePriceRange(paymentToCreate.fiatAmount),
       validateFiatCurrencySupport(paymentToCreate.fiatCurrency),
@@ -33,7 +34,8 @@ class PaymentRegistry(config: PaymentConfig) {
   }
 
   // TODO: Implement
-  def convert(fiatAmount: FiatAmount, fiatCurrency: FiatCurrency, coinCurrency: CoinCurrency): CoinAmount = CoinAmount(fiatAmount.value)
+  def convert(fiatAmount: FiatAmount, fiatCurrency: FiatCurrency, coinCurrency: CoinCurrency): CoinAmount =
+    CoinAmount(fiatAmount.value)
 
   private def validatePriceRange(fiatAmount: FiatAmount): ValidationResult[FiatAmount] =
     if (fiatAmount.value > config.minEurAmount && fiatAmount.value < config.maxEurAmount) {
@@ -58,6 +60,13 @@ class PaymentRegistry(config: PaymentConfig) {
 
   def getPayments(currency: FiatCurrency): List[Payment] = {
     DB.selectPaymentsByFiatCurrency(currency)
+  }
+
+  def findPayment(id: PaymentId): Either[PaymentNotFound, Payment] = {
+    DB.selectPaymentById(id) match {
+      case Some(value) => Right(value)
+      case None        => Left(PaymentNotFound(id))
+    }
   }
 }
 
