@@ -1,3 +1,8 @@
 package com.lgajowy.http.dto
 
-case class PaymentRequest(fiatAmount: BigDecimal, fiatCurrency: String, coinCurrency: String)
+import com.lgajowy.domain.PaymentToCreate
+
+case class PaymentRequest(fiatAmount: BigDecimal, fiatCurrency: String, coinCurrency: String) {
+  def toDomain(): PaymentToCreate = PaymentToCreate(fiatAmount, fiatCurrency, coinCurrency)
+}
+

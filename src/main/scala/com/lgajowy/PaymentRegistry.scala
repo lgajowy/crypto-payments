@@ -1,74 +1,64 @@
 package com.lgajowy
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ ActorRef, Behavior }
-import cats.data.Validated
-import cats.data.Validated.{ Invalid, Valid }
-import com.lgajowy.domain.{
-  OutOfEURPriceRange,
-  Payment,
-  PaymentValidationError,
-  UnsupportedCryptoCurrency,
-  UnsupportedFiatCurrency
-}
-import com.lgajowy.http.dto.PaymentRequest
+import cats.data.ValidatedNec
+import cats.implicits.{catsSyntaxValidatedIdBinCompat0, _}
+import com.lgajowy.domain._
 import com.lgajowy.persistence.DB
 
 import java.util.UUID
 
-object PaymentRegistry {
+class PaymentRegistry(config: PaymentConfig) {
 
-  sealed trait Command
-  final case class GetPayments(currency: String, replyTo: ActorRef[GetPaymentsResponse]) extends Command
-  final case class GetPaymentsStats(currency: String, replyTo: ActorRef[GetPaymentsStatsResponse]) extends Command
-  final case class CreatePayment(payment: PaymentRequest, replyTo: ActorRef[PaymentCreationResponse]) extends Command
-  final case class GetPayment(id: UUID, replyTo: ActorRef[GetPaymentResponse]) extends Command
+  private type ValidationResult[A] = ValidatedNec[PaymentError, A]
 
-  final case class GetPaymentResponse(maybePayment: Option[Payment])
-  final case class GetPaymentsStatsResponse(paymentCount: Int)
-  final case class GetPaymentsResponse(payments: List[Payment])
-  final case class PaymentCreationResponse(result: Validated[PaymentValidationError, Unit])
+  def createPayment(paymentToCreate: PaymentToCreate): Either[List[PaymentError], Unit] = {
+    (
+      validatePriceRange(paymentToCreate.fiatAmount),
+      validateFiatCurrencySupport(paymentToCreate.fiatCurrency),
+      validateCryptoCurrencySupport(paymentToCreate.coinCurrency)
+    ).mapN(ValidatedPaymentToCreate)
+      .map(
+        request =>
+          Payment(
+            UUID.randomUUID(),
+            request.fiatAmount,
+            request.fiatCurrency,
+            convert(request.fiatAmount, request.fiatCurrency, request.coinCurrency),
+            request.coinCurrency
+          )
+      )
+      .map(DB.insertPayment)
+      .toEither
+      .left.map(_.toChain.toList)
+  }
 
-  def apply(paymentConfig: PaymentConfig): Behavior[Command] = registry(paymentConfig)
 
-  private def registry(paymentConfig: PaymentConfig): Behavior[Command] =
-    Behaviors.receiveMessage {
-      case GetPayments(currency, replyTo) =>
-        replyTo ! GetPaymentsResponse(DB.selectPaymentsByFiatCurrency(currency))
-        Behaviors.same
-      case CreatePayment(request, replyTo) => {
+  // TODO: Implement
+  def convert(fiatAmount: BigDecimal, fiatCurrency: String, coinCurrency: String): BigDecimal = fiatAmount
 
-        if (request.fiatAmount < paymentConfig.minEurAmount || request.fiatAmount > paymentConfig.maxEurAmount) {
-          replyTo ! PaymentCreationResponse(Invalid(OutOfEURPriceRange(request.fiatAmount)))
-        }
-
-        if (!DB.selectSupportedCryptoCurrencies().contains(request.coinCurrency)) {
-          replyTo ! PaymentCreationResponse(Invalid(UnsupportedCryptoCurrency(request.coinCurrency)))
-        }
-
-        if (!DB.selectSupportedFiatCurrencies().contains(request.fiatCurrency)) {
-          replyTo ! PaymentCreationResponse(Invalid(UnsupportedFiatCurrency(request.fiatCurrency)))
-        }
-
-        val payment = Payment(
-          UUID.randomUUID(),
-          request.fiatAmount,
-          request.fiatCurrency,
-          0,
-          request.coinCurrency
-        )
-
-        DB.insertPayment(payment)
-        replyTo ! PaymentCreationResponse(Valid(()))
-      }
-      Behaviors.same
-    case GetPayment(id, replyTo) =>
-        replyTo ! GetPaymentResponse(DB.selectPaymentById(id))
-        Behaviors.same
-
-      case GetPaymentsStats(currency, replyTo) =>
-        val count = DB.countPaymentsByFiatCurrency(currency)
-        replyTo ! GetPaymentsStatsResponse(count)
-        Behaviors.same
+  private def validatePriceRange(fiatAmount: BigDecimal): ValidationResult[BigDecimal] =
+    if (fiatAmount > config.minEurAmount && fiatAmount < config.maxEurAmount) {
+      fiatAmount.validNec
+    } else {
+      OutOfEURPriceRange(fiatAmount).invalidNec
     }
+
+  private def validateCryptoCurrencySupport(coinCurrency: String): ValidationResult[String] =
+    if (DB.selectSupportedCryptoCurrencies().contains(coinCurrency)) {
+      coinCurrency.validNec
+    } else {
+      UnsupportedCryptoCurrency(coinCurrency).invalidNec
+    }
+
+  private def validateFiatCurrencySupport(fiatCurrency: String): ValidationResult[String] =
+    if (DB.selectSupportedFiatCurrencies().contains(fiatCurrency)) {
+      fiatCurrency.validNec
+    } else {
+      UnsupportedFiatCurrency(fiatCurrency).invalidNec
+    }
+
+}
+
+object PaymentRegistry {
+  def apply(config: PaymentConfig) = new PaymentRegistry(config)
 }

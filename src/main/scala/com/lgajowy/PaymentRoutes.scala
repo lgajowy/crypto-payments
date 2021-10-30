@@ -7,8 +7,8 @@ import akka.http.scaladsl.server.Route
 import akka.util.Timeout
 import cats.data.Validated
 import cats.data.Validated.{ Invalid, Valid }
-import com.lgajowy.PaymentRegistry.{ CreatePayment, GetPayment, GetPayments, GetPaymentsStats }
-import com.lgajowy.domain.{ Payment, PaymentValidationError }
+import com.lgajowy.PaymentsActor.{ CreatePayment, GetPayment, GetPayments, GetPaymentsStats }
+import com.lgajowy.domain.{ Payment, PaymentError }
 import com.lgajowy.http.dto.{ MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
 import com.lgajowy.http.endpoints
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 // TODO: Error handling
-class PaymentRoutes(config: RoutesConfiguration, paymentRegistry: ActorRef[PaymentRegistry.Command])(
+class PaymentRoutes(config: RoutesConfiguration, paymentsActor: ActorRef[PaymentsActor.Command])(
   implicit val system: ActorSystem[_]
 ) {
 
@@ -28,25 +28,22 @@ class PaymentRoutes(config: RoutesConfiguration, paymentRegistry: ActorRef[Payme
   private implicit val timeout: Timeout = Timeout.create(config.askTimeout.toJava)
 
   def createPayment(request: PaymentRequest): Future[Either[ErrorInfo, Unit]] = {
-    paymentRegistry
+    paymentsActor
       .ask(CreatePayment(request, _))
-      .map(_.result match {
-        case Invalid(e) => Left(ErrorInfo(e.toString))
-        case Valid(_)   => Right(())
-      })
+      .map(_.result)
   }
 
   def getPayment(id: UUID): Future[Either[Unit, PaymentResponse]] = {
-    paymentRegistry
+    paymentsActor
       .ask(GetPayment(id, _))
       .flatMap(response => Future.successful(response.maybePayment.map(toPaymentResponse).toRight(())))
   }
 
   def getPayments(currency: String): Future[Either[Unit, MultiplePaymentsResponse]] = {
-    paymentRegistry
+    paymentsActor
       .ask(GetPayments(currency, _))
       .flatMap(
-        (response: PaymentRegistry.GetPaymentsResponse) =>
+        (response: PaymentsActor.GetPaymentsResponse) =>
           Future.successful(Right(MultiplePaymentsResponse(response.payments.map(toPaymentResponse))))
       )
   }
@@ -54,10 +51,10 @@ class PaymentRoutes(config: RoutesConfiguration, paymentRegistry: ActorRef[Payme
   private def toPaymentResponse(payment: Payment): PaymentResponse = PaymentResponse(payment.id)
 
   def getPaymentsStats(currency: String): Future[Either[Unit, StatsResponse]] = {
-    paymentRegistry
+    paymentsActor
       .ask(GetPaymentsStats(currency, _))
       .flatMap(
-        (response: PaymentRegistry.GetPaymentsStatsResponse) =>
+        (response: PaymentsActor.GetPaymentsStatsResponse) =>
           Future.successful(Right(StatsResponse(response.paymentCount)))
       )
   }

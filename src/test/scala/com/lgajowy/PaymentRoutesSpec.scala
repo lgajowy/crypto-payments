@@ -8,7 +8,6 @@ import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import com.lgajowy.domain.{ OutOfEURPriceRange, UnsupportedCryptoCurrency, UnsupportedFiatCurrency }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -31,8 +30,10 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       config => config
     )
 
-  val paymentRegistry: ActorRef[PaymentRegistry.Command] = testKit.spawn(PaymentRegistry(configuration.api.payment))
-  lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentRegistry).allRoutes
+
+  val paymentRegistry: PaymentRegistry = PaymentRegistry(configuration.api.payment)
+  val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
+  lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
 
   private implicit val timeout: Timeout =
     Timeout.create(system.settings.config.getDuration("routes.ask-timeout"))
@@ -76,11 +77,11 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
     }
 
     "not allow creating payment outside of the eur price range" in {
-      val paymentEntity = Marshal(PaymentRequest(BigDecimal(1), "USD", "BTC")).to[MessageEntity].futureValue
+      val paymentEntity = Marshal(PaymentRequest(BigDecimal(1), "unsupportedCrypto", "unsupportedCrypto")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
-        entityAs[ErrorInfo] === ErrorInfo(OutOfEURPriceRange(1).toString)
+        entityAs[ErrorInfo]
       }
     }
 
@@ -89,16 +90,15 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
-        entityAs[ErrorInfo] === ErrorInfo(UnsupportedCryptoCurrency("unsupported").toString)
       }
     }
 
     "not allow creating payment with unsupported fiat currency" in {
-      val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "unsupportedFiat", "BTC")).to[MessageEntity].futureValue
+      val paymentEntity =
+        Marshal(PaymentRequest(BigDecimal(30), "unsupportedFiat", "BTC")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
-        entityAs[ErrorInfo] === ErrorInfo(UnsupportedFiatCurrency("unsupportedFiat").toString)
       }
     }
   }

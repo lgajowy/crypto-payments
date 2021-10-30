@@ -1,7 +1,7 @@
 package com.lgajowy.http
 
 import com.lgajowy.ErrorInfo
-import com.lgajowy.domain.PaymentValidationError
+import com.lgajowy.domain.PaymentError
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.spray.jsonBody
