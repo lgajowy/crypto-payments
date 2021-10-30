@@ -1,7 +1,8 @@
 package com.lgajowy
 
 import cats.data.ValidatedNec
-import cats.implicits.{ catsSyntaxValidatedIdBinCompat0, _ }
+import cats.implicits.{catsSyntaxValidatedIdBinCompat0, _}
+import com.lgajowy.configuration.PaymentConfig
 import com.lgajowy.domain._
 import com.lgajowy.persistence.DB
 
@@ -68,6 +69,13 @@ class PaymentRegistry(config: PaymentConfig) {
       case None        => Left(PaymentNotFound(id))
     }
   }
+
+  // TODO: Future + Applicative?
+  def getPaymentStats(fiatCurrency: FiatCurrency): PaymentStats =
+    PaymentStats(
+      DB.countAllPayments(),
+      DB.countPaymentsForFiatCurrency(fiatCurrency)
+    )
 }
 
 object PaymentRegistry {

@@ -1,4 +1,4 @@
-package com.lgajowy
+package com.lgajowy.configuration
 
 import scala.concurrent.duration.FiniteDuration
 

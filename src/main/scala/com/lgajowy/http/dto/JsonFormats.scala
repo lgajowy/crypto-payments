@@ -1,8 +1,7 @@
 package com.lgajowy.http.dto
 
-import com.lgajowy.ErrorInfo
 import spray.json.DefaultJsonProtocol._
-import spray.json.{DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
+import spray.json.{ DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat }
 
 import java.util.UUID
 
@@ -16,10 +15,12 @@ object JsonFormats {
     }
   }
 
-  implicit val paymentResponseFormat = jsonFormat1(PaymentResponse.apply)
-  implicit val paymentRequestFormat = jsonFormat3(PaymentRequest.apply)
-  implicit val multiplePaymentsResponseFormat = jsonFormat1(MultiplePaymentsResponse.apply)
-  implicit val statsResponseFormat: RootJsonFormat[StatsResponse] = jsonFormat1(StatsResponse.apply)
+  implicit val paymentResponseFormat: RootJsonFormat[PaymentResponse] = jsonFormat1(PaymentResponse.apply)
+  implicit val paymentRequestFormat: RootJsonFormat[PaymentRequest] = jsonFormat3(PaymentRequest.apply)
+  implicit val multiplePaymentsResponseFormat: RootJsonFormat[MultiplePaymentsResponse] = jsonFormat1(
+    MultiplePaymentsResponse.apply
+  )
+  implicit val statsResponseFormat: RootJsonFormat[PaymentsStatsResponse] = jsonFormat2(PaymentsStatsResponse.apply)
   implicit val errorInfoFormat: RootJsonFormat[ErrorInfo] = jsonFormat1(ErrorInfo.apply)
 
 }

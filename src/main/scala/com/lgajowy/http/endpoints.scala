@@ -1,11 +1,10 @@
 package com.lgajowy.http
 
-import com.lgajowy.ErrorInfo
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.spray.jsonBody
 import com.lgajowy.http.dto.JsonFormats._
-import com.lgajowy.http.dto.{ MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
+import com.lgajowy.http.dto._
 import sttp.model.StatusCode
 import sttp.model.StatusCode.Created
 
@@ -32,9 +31,9 @@ object endpoints {
       .in("payments" / query[String]("currency"))
       .out(jsonBody[MultiplePaymentsResponse])
 
-  val getPaymentsStats: Endpoint[String, Unit, StatsResponse, Any] =
+  val getPaymentsStats: Endpoint[String, Unit, PaymentsStatsResponse, Any] =
     endpoint.get
       .in("payments" / "stats" / query[String]("currency"))
-      .out(jsonBody[StatsResponse])
+      .out(jsonBody[PaymentsStatsResponse])
 
 }

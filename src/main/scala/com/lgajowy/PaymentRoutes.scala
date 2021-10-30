@@ -1,20 +1,13 @@
 package com.lgajowy
 
-import akka.actor.typed.scaladsl.AskPattern.{ Askable, _ }
-import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.actor.typed.scaladsl.AskPattern.{Askable, _}
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
-import com.lgajowy.PaymentsActor.{ CreatePayment, GetPayment, GetPayments, GetPaymentsStats }
-import com.lgajowy.domain.FiatCurrency
-import com.lgajowy.http.dto.{
-  FiatCurrencyRequest,
-  MultiplePaymentsResponse,
-  PaymentIdRequest,
-  PaymentRequest,
-  PaymentResponse,
-  StatsResponse
-}
+import com.lgajowy.PaymentsActor.{CreatePayment, GetPayment, GetPayments, GetPaymentsStats}
+import com.lgajowy.configuration.RoutesConfiguration
+import com.lgajowy.http.dto._
 import com.lgajowy.http.endpoints
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
 
@@ -49,13 +42,10 @@ class PaymentRoutes(config: RoutesConfiguration, paymentsActor: ActorRef[Payment
       .map(response => Right(response.result))
   }
 
-  def getPaymentsStats(currency: String): Future[Either[Unit, StatsResponse]] = {
+  def getPaymentsStats(currency: String): Future[Either[Unit, PaymentsStatsResponse]] = {
     paymentsActor
       .ask(GetPaymentsStats(FiatCurrencyRequest(currency), _))
-      .flatMap(
-        (response: PaymentsActor.GetPaymentsStatsResponse) =>
-          Future.successful(Right(StatsResponse(response.paymentCount)))
-      )
+      .map(response => Right(response.result))
   }
 
   val allRoutes: Route = List(

@@ -4,10 +4,11 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
+import com.lgajowy.configuration.Configuration
 import pureconfig.generic.auto._
 import pureconfig.ConfigSource
 
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 object CryptoPaymentsApp {
 

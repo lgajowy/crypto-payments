@@ -2,17 +2,7 @@ package com.lgajowy
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior }
-import com.lgajowy.domain.{ Payment, PaymentId, PaymentNotFound }
-import com.lgajowy.http.dto.{
-  FiatCurrencyRequest,
-  MultiplePaymentsResponse,
-  PaymentIdRequest,
-  PaymentRequest,
-  PaymentResponse
-}
-import com.lgajowy.persistence.DB
-
-import java.util.UUID
+import com.lgajowy.http.dto._
 
 object PaymentsActor {
 
@@ -24,7 +14,7 @@ object PaymentsActor {
   final case class GetPayment(id: PaymentIdRequest, replyTo: ActorRef[GetPaymentResponse]) extends Command
 
   final case class GetPaymentResponse(result: Either[ErrorInfo, PaymentResponse])
-  final case class GetPaymentsStatsResponse(paymentCount: Int)
+  final case class GetPaymentsStatsResponse(result: PaymentsStatsResponse)
   final case class GetPaymentsResponse(result: MultiplePaymentsResponse)
   final case class PaymentCreationResponse(result: Either[ErrorInfo, Unit])
 
@@ -58,8 +48,10 @@ object PaymentsActor {
         Behaviors.same
 
       case GetPaymentsStats(currency, replyTo) =>
-        val count = DB.countPaymentsByFiatCurrency(currency.toDomain())
-        replyTo ! GetPaymentsStatsResponse(count)
+        val stats: PaymentsStatsResponse =
+          PaymentsStatsResponse.fromDomain(paymentRegistry.getPaymentStats(currency.toDomain()))
+
+        replyTo ! GetPaymentsStatsResponse(stats)
         Behaviors.same
     }
 }
