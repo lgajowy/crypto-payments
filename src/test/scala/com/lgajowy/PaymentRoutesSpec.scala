@@ -1,21 +1,25 @@
 package com.lgajowy
 
-import akka.http.scaladsl.model.{ContentTypes, HttpRequest, MessageEntity, StatusCodes}
+import akka.http.scaladsl.model.{ ContentTypes, HttpRequest, MessageEntity, StatusCodes }
 import akka.util.Timeout
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.actor.typed.{ActorRef, ActorSystem}
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.lgajowy.configuration.Configuration
+import com.lgajowy.domain.PaymentId
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import com.lgajowy.http.dto.JsonFormats._
-import com.lgajowy.http.dto.{ErrorInfo, MultiplePaymentsResponse, PaymentRequest}
+import com.lgajowy.http.dto.{ ErrorInfo, MultiplePaymentsResponse, PaymentRequest, PaymentResponse }
+import com.lgajowy.tools.UuidGenerator
 import pureconfig.generic.auto._
 import pureconfig.ConfigSource
+
+import java.util.UUID
 
 class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 
@@ -31,8 +35,9 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       config => config
     )
 
+  private implicit val testUuidGenerator: UuidGenerator = () => UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627")
 
-  val paymentRegistry: PaymentRegistry = PaymentRegistry(configuration.api.payment)
+  val paymentRegistry: PaymentRegistry = new PaymentRegistry(configuration.api.payment)(testUuidGenerator)
   val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
   lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
 
@@ -58,8 +63,6 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       }
     }
 
-    // TODO: Create GenUUID typeclass. Have a production and test interpreter.
-    //  Test interpreter will generate deterministically. Thanks to that It will be easier to test cases like below.
     "respond with previously added payment " in {
       val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "USD", "BTC")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
@@ -67,17 +70,17 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
         status should ===(StatusCodes.Created)
       }
 
-      val getPaymentsRequest = HttpRequest(uri = "/payments?currency=USD")
+      val getPayment = HttpRequest(uri = "/payment/68a6ceae-c52e-4a94-b523-5ac16f7cf627")
 
-      // TODO: This should match the returned (deterministic) id set.
-      getPaymentsRequest ~> routes ~> check {
-        entityAs[MultiplePaymentsResponse].list.size shouldBe 1
+      getPayment ~> routes ~> check {
+        entityAs[PaymentResponse] should ===(PaymentResponse(UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627")))
       }
 
     }
 
     "not allow creating payment outside of the eur price range" in {
-      val paymentEntity = Marshal(PaymentRequest(BigDecimal(1), "unsupportedCrypto", "unsupportedCrypto")).to[MessageEntity].futureValue
+      val paymentEntity =
+        Marshal(PaymentRequest(BigDecimal(1), "unsupportedCrypto", "unsupportedCrypto")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
