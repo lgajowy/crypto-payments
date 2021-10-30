@@ -42,10 +42,7 @@ class PaymentRoutes(config: RoutesConfiguration, paymentsActor: ActorRef[Payment
   def getPayments(currency: String): Future[Either[Unit, MultiplePaymentsResponse]] = {
     paymentsActor
       .ask(GetPayments(currency, _))
-      .flatMap(
-        (response: PaymentsActor.GetPaymentsResponse) =>
-          Future.successful(Right(MultiplePaymentsResponse(response.payments.map(toPaymentResponse))))
-      )
+      .map(response => Right(response.result))
   }
 
   private def toPaymentResponse(payment: Payment): PaymentResponse = PaymentResponse(payment.id)

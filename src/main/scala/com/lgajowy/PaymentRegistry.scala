@@ -1,14 +1,13 @@
 package com.lgajowy
 
 import cats.data.ValidatedNec
-import cats.implicits.{catsSyntaxValidatedIdBinCompat0, _}
+import cats.implicits.{ catsSyntaxValidatedIdBinCompat0, _ }
 import com.lgajowy.domain._
 import com.lgajowy.persistence.DB
 
 import java.util.UUID
 
 class PaymentRegistry(config: PaymentConfig) {
-
   private type ValidationResult[A] = ValidatedNec[PaymentError, A]
 
   def createPayment(paymentToCreate: PaymentToCreate): Either[List[PaymentError], Unit] = {
@@ -29,9 +28,9 @@ class PaymentRegistry(config: PaymentConfig) {
       )
       .map(DB.insertPayment)
       .toEither
-      .left.map(_.toChain.toList)
+      .left
+      .map(_.toChain.toList)
   }
-
 
   // TODO: Implement
   def convert(fiatAmount: BigDecimal, fiatCurrency: String, coinCurrency: String): BigDecimal = fiatAmount
@@ -57,6 +56,9 @@ class PaymentRegistry(config: PaymentConfig) {
       UnsupportedFiatCurrency(fiatCurrency).invalidNec
     }
 
+  def getPayments(currency: String): List[Payment] = {
+    DB.selectPaymentsByFiatCurrency(currency)
+  }
 }
 
 object PaymentRegistry {

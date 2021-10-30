@@ -16,10 +16,10 @@ object JsonFormats {
     }
   }
 
-  implicit val paymentResponseFormat = jsonFormat1(PaymentResponse)
-  implicit val paymentRequestFormat = jsonFormat3(PaymentRequest)
-  implicit val multiplePaymentsResponseFormat = jsonFormat1(MultiplePaymentsResponse)
-  implicit val statsResponseFormat: RootJsonFormat[StatsResponse] = jsonFormat1(StatsResponse)
+  implicit val paymentResponseFormat = jsonFormat1(PaymentResponse.apply)
+  implicit val paymentRequestFormat = jsonFormat3(PaymentRequest.apply)
+  implicit val multiplePaymentsResponseFormat = jsonFormat1(MultiplePaymentsResponse.apply)
+  implicit val statsResponseFormat: RootJsonFormat[StatsResponse] = jsonFormat1(StatsResponse.apply)
   implicit val errorInfoFormat: RootJsonFormat[ErrorInfo] = jsonFormat1(ErrorInfo.apply)
 
 }
