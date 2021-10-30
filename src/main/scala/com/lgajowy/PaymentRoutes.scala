@@ -5,26 +5,35 @@ import akka.actor.typed.scaladsl.AskPattern.{ Askable, _ }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.util.Timeout
+import cats.data.Validated
+import cats.data.Validated.{ Invalid, Valid }
 import com.lgajowy.PaymentRegistry.{ CreatePayment, GetPayment, GetPayments, GetPaymentsStats }
-import com.lgajowy.domain.Payment
+import com.lgajowy.domain.{ Payment, PaymentValidationError }
 import com.lgajowy.http.dto.{ MultiplePaymentsResponse, PaymentRequest, PaymentResponse, StatsResponse }
 import com.lgajowy.http.endpoints
 import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
-import scala.jdk.DurationConverters._
 
+import scala.jdk.DurationConverters._
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 // TODO: Error handling
-class PaymentRoutes(config: RoutesConfiguration, paymentRegistry: ActorRef[PaymentRegistry.Command])(implicit val system: ActorSystem[_]) {
+class PaymentRoutes(config: RoutesConfiguration, paymentRegistry: ActorRef[PaymentRegistry.Command])(
+  implicit val system: ActorSystem[_]
+) {
 
   private val interpreter: AkkaHttpServerInterpreter = AkkaHttpServerInterpreter()
 
   private implicit val timeout: Timeout = Timeout.create(config.askTimeout.toJava)
 
-  def createPayment(request: PaymentRequest): Future[Either[Unit, Unit]] = {
-    paymentRegistry.ask(CreatePayment(request, _)).map(_ => Right(()))
+  def createPayment(request: PaymentRequest): Future[Either[ErrorInfo, Unit]] = {
+    paymentRegistry
+      .ask(CreatePayment(request, _))
+      .map(_.result match {
+        case Invalid(e) => Left(ErrorInfo(e.toString))
+        case Valid(_)   => Right(())
+      })
   }
 
   def getPayment(id: UUID): Future[Either[Unit, PaymentResponse]] = {

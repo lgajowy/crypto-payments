@@ -8,6 +8,7 @@ import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.lgajowy.domain.{ OutOfEURPriceRange, UnsupportedCryptoCurrency, UnsupportedFiatCurrency }
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -23,12 +24,14 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
   override def createActorSystem(): akka.actor.ActorSystem =
     testKit.system.classicSystem
 
-  val configuration: Configuration = ConfigSource.default.load[Configuration].fold (
-    error => throw new RuntimeException(error.toString()),
-    config => config
-  )
+  val configuration: Configuration = ConfigSource.default
+    .load[Configuration]
+    .fold(
+      error => throw new RuntimeException(error.toString()),
+      config => config
+    )
 
-  val paymentRegistry: ActorRef[PaymentRegistry.Command] = testKit.spawn(PaymentRegistry())
+  val paymentRegistry: ActorRef[PaymentRegistry.Command] = testKit.spawn(PaymentRegistry(configuration.api.payment))
   lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentRegistry).allRoutes
 
   private implicit val timeout: Timeout =
@@ -57,7 +60,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
     // TODO: Create GenUUID typeclass. Have a production and test interpreter.
     //  Test interpreter will generate deterministically. Thanks to that It will be easier to test cases like below.
     "respond with previously added payment " in {
-      val paymentEntity = Marshal(PaymentRequest(BigDecimal(1), "USD", "BTC")).to[MessageEntity].futureValue
+      val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "USD", "BTC")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
         status should ===(StatusCodes.Created)
@@ -72,5 +75,31 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
 
     }
 
+    "not allow creating payment outside of the eur price range" in {
+      val paymentEntity = Marshal(PaymentRequest(BigDecimal(1), "USD", "BTC")).to[MessageEntity].futureValue
+      val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
+      createPaymentRequest ~> routes ~> check {
+        status should ===(StatusCodes.BadRequest)
+        entityAs[ErrorInfo] === ErrorInfo(OutOfEURPriceRange(1).toString)
+      }
+    }
+
+    "not allow creating payment with unsupported coin" in {
+      val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "USD", "unsupported")).to[MessageEntity].futureValue
+      val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
+      createPaymentRequest ~> routes ~> check {
+        status should ===(StatusCodes.BadRequest)
+        entityAs[ErrorInfo] === ErrorInfo(UnsupportedCryptoCurrency("unsupported").toString)
+      }
+    }
+
+    "not allow creating payment with unsupported fiat currency" in {
+      val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "unsupportedFiat", "BTC")).to[MessageEntity].futureValue
+      val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
+      createPaymentRequest ~> routes ~> check {
+        status should ===(StatusCodes.BadRequest)
+        entityAs[ErrorInfo] === ErrorInfo(UnsupportedFiatCurrency("unsupportedFiat").toString)
+      }
+    }
   }
 }

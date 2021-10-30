@@ -20,4 +20,8 @@ object DB {
   def selectPaymentById(id: UUID): Option[Payment] = payments.find(_.id == id)
 
   def countPaymentsByFiatCurrency(currency: String): Int = payments.count(_.fiatCurrency == currency)
+
+  def selectSupportedCryptoCurrencies(): List[String] = cryptoCurrencies
+
+  def selectSupportedFiatCurrencies(): List[String] = fiatCurrencies
 }

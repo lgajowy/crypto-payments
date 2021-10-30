@@ -1,7 +1,8 @@
 package com.lgajowy.http.dto
 
+import com.lgajowy.ErrorInfo
 import spray.json.DefaultJsonProtocol._
-import spray.json.{ DeserializationException, JsString, JsValue, JsonFormat }
+import spray.json.{DeserializationException, JsString, JsValue, JsonFormat}
 
 import java.util.UUID
 
@@ -19,5 +20,6 @@ object JsonFormats {
   implicit val paymentRequestFormat = jsonFormat3(PaymentRequest)
   implicit val multiplePaymentsResponseFormat = jsonFormat1(MultiplePaymentsResponse)
   implicit val statsResponseFormat = jsonFormat1(StatsResponse)
+  implicit val errorInfoFormat = jsonFormat1(ErrorInfo)
 
 }

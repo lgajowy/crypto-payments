@@ -1,5 +1,7 @@
 package com.lgajowy.http
 
+import com.lgajowy.ErrorInfo
+import com.lgajowy.domain.PaymentValidationError
 import sttp.tapir._
 import sttp.tapir.generic.auto.schemaForCaseClass
 import sttp.tapir.json.spray.jsonBody
@@ -16,10 +18,11 @@ object endpoints {
       .in("payment" / path[UUID])
       .out(jsonBody[PaymentResponse])
 
-  val postPayment: Endpoint[PaymentRequest, Unit, Unit, Any] =
+  val postPayment: Endpoint[PaymentRequest, ErrorInfo, Unit, Any] =
     endpoint.post
       .in("payment" / "new")
       .in(jsonBody[PaymentRequest])
+      .errorOut(jsonBody[ErrorInfo])
       .out(statusCode(Created))
 
   val getPayments: Endpoint[String, Unit, MultiplePaymentsResponse, Any] =
