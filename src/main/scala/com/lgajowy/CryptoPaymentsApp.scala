@@ -25,7 +25,7 @@ object CryptoPaymentsApp {
 
   private def setupApplication(configuration: Configuration): ActorSystem[Nothing] = {
     val rootBehavior = Behaviors.setup[Nothing] { context =>
-      val paymentRegistry = PaymentRegistry(configuration.api.payment)
+      val paymentRegistry = PaymentRegistry(configuration.api.payment, Exchange())
 
       val paymentRegistryActor = context.spawn(PaymentsActor(paymentRegistry), "PaymentsRegistryActor")
       context.watch(paymentRegistryActor)

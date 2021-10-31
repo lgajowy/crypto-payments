@@ -9,13 +9,13 @@ import com.lgajowy.tools.UuidGenerator
 
 import java.time.{ Clock, LocalDateTime }
 
-class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerator, clock: Clock) {
+class PaymentRegistry(config: PaymentConfig, exchange: Exchange)(implicit uuidGenerator: UuidGenerator, clock: Clock) {
 
   private type ValidationResult[A] = ValidatedNec[PaymentRequestValidationError, A]
 
   def createPayment(paymentToCreate: PaymentToCreate): Either[List[PaymentRequestValidationError], Unit] = {
     (
-      validatePriceRange(paymentToCreate.fiatAmount),
+      validateFiatEURPriceRange(paymentToCreate.fiatAmount, paymentToCreate.fiatCurrency),
       validateFiatCurrencySupport(paymentToCreate.fiatCurrency),
       validateCryptoCurrencySupport(paymentToCreate.coinCurrency)
     ).mapN(ValidatedPaymentToCreate)
@@ -28,8 +28,10 @@ class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerat
             PaymentId(uuidGenerator.generate()),
             request.fiatAmount,
             request.fiatCurrency,
-            convert(request.fiatAmount, request.fiatCurrency, request.coinCurrency),
+            exchange.exchangeToCoin(request.fiatAmount, request.fiatCurrency, request.coinCurrency),
             request.coinCurrency,
+            exchange.getExchangeRate(request.fiatCurrency, request.coinCurrency),
+            exchange.getEurExchangeRate(request.fiatCurrency),
             CreatedAt(now),
             ExpirationTime(expiresAt)
           )
@@ -41,16 +43,18 @@ class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerat
       .map(_.toChain.toList)
   }
 
-  // TODO: Implement
-  def convert(fiatAmount: FiatAmount, fiatCurrency: FiatCurrency, coinCurrency: CoinCurrency): CoinAmount =
-    CoinAmount(fiatAmount.value)
+  private def validateFiatEURPriceRange(
+    fiatAmount: FiatAmount,
+    fiatCurrency: FiatCurrency
+  ): ValidationResult[FiatAmount] = {
+    val fiatInEur: FiatAmount = exchange.exchangeToEUR(fiatAmount, fiatCurrency)
 
-  private def validatePriceRange(fiatAmount: FiatAmount): ValidationResult[FiatAmount] =
-    if (fiatAmount.value > config.minEurAmount && fiatAmount.value < config.maxEurAmount) {
+    if (fiatInEur.value > config.minEurAmount && fiatInEur.value < config.maxEurAmount) {
       fiatAmount.validNec
     } else {
-      OutOfEURPriceRange(fiatAmount).invalidNec
+      OutOfEURPriceRange(fiatAmount, fiatCurrency).invalidNec
     }
+  }
 
   private def validateCryptoCurrencySupport(coinCurrency: CoinCurrency): ValidationResult[CoinCurrency] =
     if (DB.selectSupportedCryptoCurrencies().contains(coinCurrency)) {
@@ -86,6 +90,6 @@ class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerat
 }
 
 object PaymentRegistry {
-  def apply(config: PaymentConfig)(implicit uuidGenerator: UuidGenerator, clock: Clock) =
-    new PaymentRegistry(config)(uuidGenerator, clock)
+  def apply(config: PaymentConfig, exchange: Exchange)(implicit uuidGenerator: UuidGenerator, clock: Clock) =
+    new PaymentRegistry(config, exchange)(uuidGenerator, clock)
 }

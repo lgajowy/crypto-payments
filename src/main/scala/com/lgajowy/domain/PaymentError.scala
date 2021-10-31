@@ -6,8 +6,8 @@ sealed trait PaymentError {
 
 sealed trait PaymentRequestValidationError extends PaymentError
 
-case class OutOfEURPriceRange(amount: FiatAmount) extends PaymentRequestValidationError {
-  def message = s"The price is out of range. Price: ${amount.value}"
+case class OutOfEURPriceRange(amount: FiatAmount, currency: FiatCurrency) extends PaymentRequestValidationError {
+  def message = s"The price is out of EUR range. Price: ${amount.value} ${currency.value}"
 }
 case class UnsupportedFiatCurrency(currency: FiatCurrency) extends PaymentRequestValidationError {
   def message = s"Unsupported fiat currency: ${currency.value}"

@@ -1,25 +1,24 @@
 package com.lgajowy
 
-import akka.http.scaladsl.model.{ ContentTypes, HttpRequest, MessageEntity, StatusCodes }
-import akka.util.Timeout
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.Marshal
+import akka.http.scaladsl.model.{ ContentTypes, HttpRequest, MessageEntity, StatusCodes }
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.util.Timeout
 import com.lgajowy.configuration.Configuration
-import com.lgajowy.domain.PaymentId
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.wordspec.AnyWordSpec
 import com.lgajowy.http.dto.JsonFormats._
 import com.lgajowy.http.dto.{ ErrorInfo, MultiplePaymentsResponse, PaymentRequest, PaymentResponse }
 import com.lgajowy.tools.UuidGenerator
-import pureconfig.generic.auto._
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import pureconfig.ConfigSource
+import pureconfig.generic.auto._
 
-import java.time.{ Clock, Instant, ZoneId, ZoneOffset }
+import java.time.{ Clock, Instant, ZoneOffset }
 import java.util.UUID
 
 class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
@@ -39,7 +38,8 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
   private val testUuidGenerator: UuidGenerator = () => UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627")
   private val testClock: Clock = Clock.fixed(Instant.parse("2018-08-19T16:45:42.00Z"), ZoneOffset.UTC)
 
-  val paymentRegistry: PaymentRegistry = new PaymentRegistry(configuration.api.payment)(testUuidGenerator, testClock)
+  val paymentRegistry: PaymentRegistry =
+    PaymentRegistry(configuration.api.payment, Exchange())(testUuidGenerator, testClock)
   val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
   lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
 
@@ -82,28 +82,11 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
 
     "not allow creating payment outside of the eur price range" in {
       val paymentEntity =
-        Marshal(PaymentRequest(BigDecimal(1), "unsupportedCrypto", "unsupportedCrypto")).to[MessageEntity].futureValue
+        Marshal(PaymentRequest(BigDecimal(1), "USD", "unsupportedCrypto")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
         entityAs[ErrorInfo]
-      }
-    }
-
-    "not allow creating payment with unsupported coin" in {
-      val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "USD", "unsupported")).to[MessageEntity].futureValue
-      val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
-      createPaymentRequest ~> routes ~> check {
-        status should ===(StatusCodes.BadRequest)
-      }
-    }
-
-    "not allow creating payment with unsupported fiat currency" in {
-      val paymentEntity =
-        Marshal(PaymentRequest(BigDecimal(30), "unsupportedFiat", "BTC")).to[MessageEntity].futureValue
-      val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
-      createPaymentRequest ~> routes ~> check {
-        status should ===(StatusCodes.BadRequest)
       }
     }
   }
