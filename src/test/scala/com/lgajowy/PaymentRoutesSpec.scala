@@ -75,7 +75,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       val getPayment = HttpRequest(uri = "/payment/68a6ceae-c52e-4a94-b523-5ac16f7cf627")
 
       getPayment ~> routes ~> check {
-        entityAs[PaymentResponse] should ===(PaymentResponse(UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627")))
+        entityAs[PaymentResponse].id should ===(UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627"))
       }
 
     }
