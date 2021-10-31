@@ -1,8 +1,9 @@
 package com.lgajowy
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ ActorRef, Behavior }
+import akka.actor.typed.{ActorRef, Behavior}
 import com.lgajowy.http.dto._
+import com.lgajowy.services.PaymentRegistry
 
 object PaymentsActor {
 

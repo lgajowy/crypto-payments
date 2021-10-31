@@ -1,13 +1,13 @@
-package com.lgajowy
+package com.lgajowy.services
 
 import cats.data.ValidatedNec
-import cats.implicits.{ catsSyntaxValidatedIdBinCompat0, _ }
+import cats.implicits.{catsSyntaxValidatedIdBinCompat0, _}
 import com.lgajowy.configuration.PaymentConfig
 import com.lgajowy.domain._
 import com.lgajowy.persistence.DB
 import com.lgajowy.tools.UuidGenerator
 
-import java.time.{ Clock, LocalDateTime }
+import java.time.{Clock, LocalDateTime}
 
 class PaymentRegistry(config: PaymentConfig, exchange: Exchange)(implicit uuidGenerator: UuidGenerator, clock: Clock) {
 

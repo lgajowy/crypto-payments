@@ -1,6 +1,6 @@
-package com.lgajowy
+package com.lgajowy.services
 
-import com.lgajowy.domain.{ CoinAmount, CoinCurrency, EurExchangeRate, ExchangeRate, FiatAmount, FiatCurrency }
+import com.lgajowy.domain._
 import com.lgajowy.persistence.MarketData
 
 class Exchange {

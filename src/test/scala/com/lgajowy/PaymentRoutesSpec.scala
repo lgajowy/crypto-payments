@@ -1,16 +1,17 @@
 package com.lgajowy
 
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
-import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.actor.typed.{ActorRef, ActorSystem}
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.{ ContentTypes, HttpRequest, MessageEntity, StatusCodes }
+import akka.http.scaladsl.model.{ContentTypes, HttpRequest, MessageEntity, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.util.Timeout
 import com.lgajowy.configuration.Configuration
 import com.lgajowy.http.dto.JsonFormats._
-import com.lgajowy.http.dto.{ ErrorInfo, MultiplePaymentsResponse, PaymentRequest, PaymentResponse }
+import com.lgajowy.http.dto.{ErrorInfo, MultiplePaymentsResponse, PaymentRequest, PaymentResponse}
+import com.lgajowy.services.{Exchange, PaymentRegistry}
 import com.lgajowy.tools.UuidGenerator
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -18,7 +19,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import pureconfig.ConfigSource
 import pureconfig.generic.auto._
 
-import java.time.{ Clock, Instant, ZoneOffset }
+import java.time.{Clock, Instant, ZoneOffset}
 import java.util.UUID
 
 class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {

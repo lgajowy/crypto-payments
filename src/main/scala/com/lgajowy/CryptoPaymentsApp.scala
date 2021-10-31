@@ -5,6 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import com.lgajowy.configuration.Configuration
+import com.lgajowy.services.{ Exchange, PaymentRegistry }
 import pureconfig.generic.auto._
 import pureconfig.ConfigSource
 import tools.ClockProvider._
