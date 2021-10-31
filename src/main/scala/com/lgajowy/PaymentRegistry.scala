@@ -1,15 +1,15 @@
 package com.lgajowy
 
 import cats.data.ValidatedNec
-import cats.implicits.{catsSyntaxValidatedIdBinCompat0, _}
+import cats.implicits.{ catsSyntaxValidatedIdBinCompat0, _ }
 import com.lgajowy.configuration.PaymentConfig
 import com.lgajowy.domain._
 import com.lgajowy.persistence.DB
 import com.lgajowy.tools.UuidGenerator
 
-import java.util.UUID
+import java.time.{ Clock, LocalDateTime }
 
-class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerator) {
+class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerator, clock: Clock) {
 
   private type ValidationResult[A] = ValidatedNec[PaymentRequestValidationError, A]
 
@@ -20,14 +20,20 @@ class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerat
       validateCryptoCurrencySupport(paymentToCreate.coinCurrency)
     ).mapN(ValidatedPaymentToCreate)
       .map(
-        request =>
+        request => {
+          val now = LocalDateTime.now(clock)
+          val expiresAt = now.plusNanos(config.expiration.toNanos)
+
           Payment(
             PaymentId(uuidGenerator.generate()),
             request.fiatAmount,
             request.fiatCurrency,
             convert(request.fiatAmount, request.fiatCurrency, request.coinCurrency),
-            request.coinCurrency
+            request.coinCurrency,
+            CreatedAt(now),
+            ExpirationTime(expiresAt)
           )
+        }
       )
       .map(DB.insertPayment)
       .toEither
@@ -80,5 +86,6 @@ class PaymentRegistry(config: PaymentConfig)(implicit uuidGenerator: UuidGenerat
 }
 
 object PaymentRegistry {
-  def apply(config: PaymentConfig) = new PaymentRegistry(config)
+  def apply(config: PaymentConfig)(implicit uuidGenerator: UuidGenerator, clock: Clock) =
+    new PaymentRegistry(config)(uuidGenerator, clock)
 }

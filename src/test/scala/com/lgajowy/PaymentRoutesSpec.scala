@@ -19,6 +19,7 @@ import com.lgajowy.tools.UuidGenerator
 import pureconfig.generic.auto._
 import pureconfig.ConfigSource
 
+import java.time.{ Clock, Instant, ZoneId, ZoneOffset }
 import java.util.UUID
 
 class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
@@ -35,9 +36,10 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       config => config
     )
 
-  private implicit val testUuidGenerator: UuidGenerator = () => UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627")
+  private val testUuidGenerator: UuidGenerator = () => UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627")
+  private val testClock: Clock = Clock.fixed(Instant.parse("2018-08-19T16:45:42.00Z"), ZoneOffset.UTC)
 
-  val paymentRegistry: PaymentRegistry = new PaymentRegistry(configuration.api.payment)(testUuidGenerator)
+  val paymentRegistry: PaymentRegistry = new PaymentRegistry(configuration.api.payment)(testUuidGenerator, testClock)
   val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
   lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
 

@@ -7,8 +7,9 @@ import akka.http.scaladsl.server.Route
 import com.lgajowy.configuration.Configuration
 import pureconfig.generic.auto._
 import pureconfig.ConfigSource
+import tools.ClockProvider._
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 object CryptoPaymentsApp {
 
