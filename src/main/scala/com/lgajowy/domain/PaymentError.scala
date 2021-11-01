@@ -12,6 +12,11 @@ case class OutOfEURPriceRange(amount: FiatAmount, currency: FiatCurrency) extend
 case class UnsupportedFiatCurrency(currency: FiatCurrency) extends PaymentRequestValidationError {
   def message = s"Unsupported fiat currency: ${currency.value}"
 }
+
+case class UnknownFiatCurrencyExchangeRate(currency: FiatCurrency) extends PaymentRequestValidationError {
+  def message = s"Unknown fiat currency exchange rate: ${currency.value}"
+}
+
 case class UnsupportedCryptoCurrency(currency: CoinCurrency) extends PaymentRequestValidationError {
   def message = s"Unsupported crypto currency: ${currency.value}"
 }

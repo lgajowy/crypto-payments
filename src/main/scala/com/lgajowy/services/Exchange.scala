@@ -1,30 +1,30 @@
 package com.lgajowy.services
 
 import com.lgajowy.domain._
-import com.lgajowy.persistence.MarketData
+import com.lgajowy.persistence.ExchangeRatesRepository
 
-class Exchange {
+class Exchange(ratesRepository: ExchangeRatesRepository) {
 
-  def exchangeToEUR(fiatAmount: FiatAmount, fiatCurrency: FiatCurrency): FiatAmount = {
-    val rate: BigDecimal = MarketData.exchangeRatesToEUR(fiatCurrency.value)
-    FiatAmount(fiatAmount.value * rate)
+  def exchangeToCoin(amount: FiatAmount, exchangeRate: ExchangeRate) = CoinAmount(amount.value * exchangeRate.value)
+
+  def getEurExchangeRate(currency: FiatCurrency): Option[EurExchangeRate] =
+    ratesRepository.getEurExchangeRate(currency).map(EurExchangeRate)
+
+  def getCoinExchangeRate(fiatCurrency: FiatCurrency, coinCurrency: CoinCurrency): Option[ExchangeRate] =
+    ratesRepository.getCoinExchangeRate(fiatCurrency, coinCurrency)
+
+  def exchangeToEur(amount: FiatAmount, currency: FiatCurrency): Either[UnknownFiatCurrencyExchangeRate, FiatAmount] = {
+    val exchangeRate: Option[ExchangeRate] = ratesRepository.getEurExchangeRate(currency)
+
+    exchangeRate match {
+      case None       => Left(UnknownFiatCurrencyExchangeRate(currency))
+      case Some(rate) => Right(exchangeToFiat(amount, rate))
+    }
   }
-
-  // TODO fix to use not only BTC
-  def exchangeToCoin(amount: FiatAmount, currency: FiatCurrency, coinCurrency: CoinCurrency): CoinAmount = {
-    val rate: BigDecimal = MarketData.exchangeRatesOfBTC(currency.value)
-    CoinAmount(amount.value * rate)
-  }
-
-  def getExchangeRate(fiatCurrency: FiatCurrency, coinCurrency: CoinCurrency): ExchangeRate = {
-    ExchangeRate(MarketData.exchangeRatesOfBTC(fiatCurrency.value))
-  }
-
-  def getEurExchangeRate(fiatCurrency: FiatCurrency): EurExchangeRate = {
-    EurExchangeRate(MarketData.exchangeRatesToEUR(fiatCurrency.value))
-  }
+  def exchangeToFiat(amount: FiatAmount, exchangeRate: ExchangeRate) =
+    FiatAmount(amount.value * exchangeRate.value)
 }
 
 object Exchange {
-  def apply() = new Exchange()
+  def apply(ratesRepository: ExchangeRatesRepository) = new Exchange(ratesRepository)
 }

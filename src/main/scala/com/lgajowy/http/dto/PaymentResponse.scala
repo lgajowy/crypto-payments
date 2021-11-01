@@ -25,7 +25,7 @@ object PaymentResponse {
     payment.coinAmount.value,
     payment.coinCurrency.value,
     payment.exchangeRate.value,
-    payment.eurExchangeRate.value,
+    payment.eurExchangeRate.rate.value,
     payment.createdAt.value,
     payment.expirationTime.value
   )
