@@ -1,15 +1,18 @@
 package com.lgajowy.services
 
 import cats.data.ValidatedNec
-import cats.implicits.{catsSyntaxValidatedIdBinCompat0, _}
+import cats.implicits.{ catsSyntaxValidatedIdBinCompat0, _ }
 import com.lgajowy.configuration.PaymentConfig
 import com.lgajowy.domain._
-import com.lgajowy.persistence.DB
+import com.lgajowy.persistence.Database
 import com.lgajowy.tools.UuidGenerator
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{ Clock, LocalDateTime }
 
-class PaymentRegistry(config: PaymentConfig, exchange: Exchange)(implicit uuidGenerator: UuidGenerator, clock: Clock) {
+class PaymentRegistry(config: PaymentConfig, exchange: Exchange, database: Database)(
+  implicit uuidGenerator: UuidGenerator,
+  clock: Clock
+) {
 
   private type ValidationResult[A] = ValidatedNec[PaymentRequestValidationError, A]
 
@@ -24,7 +27,7 @@ class PaymentRegistry(config: PaymentConfig, exchange: Exchange)(implicit uuidGe
           validateCryptoCurrencySupport(paymentToCreate.coinCurrency)
         ).mapN(ValidatedPaymentToCreate)
           .map(request => createPayment(eurExchangeRate, request))
-          .map(DB.insertPayment)
+          .map(database.insertPayment)
           .toEither
           .left
           .map(_.toChain.toList)
@@ -35,7 +38,8 @@ class PaymentRegistry(config: PaymentConfig, exchange: Exchange)(implicit uuidGe
     val now = LocalDateTime.now(clock)
     val expiresAt = now.plusNanos(config.expiration.toNanos)
 
-    // FIXME: For now we just assume that the exchange rate is there since the validation has succeeded.
+    // FIXME: For now we just assume that the exchange rate is there
+    //  because the supported coin currency validation has succeeded.
     val coinExchangeRate = exchange.getCoinExchangeRate(request.fiatCurrency, request.coinCurrency).get
     val coinAmount = exchange.exchangeToCoin(request.fiatAmount, coinExchangeRate)
 
@@ -65,25 +69,25 @@ class PaymentRegistry(config: PaymentConfig, exchange: Exchange)(implicit uuidGe
   }
 
   private def validateCryptoCurrencySupport(coinCurrency: CoinCurrency): ValidationResult[CoinCurrency] =
-    if (DB.selectSupportedCryptoCurrencies().contains(coinCurrency)) {
+    if (database.selectSupportedCryptoCurrencies().contains(coinCurrency)) {
       coinCurrency.validNec
     } else {
       UnsupportedCryptoCurrency(coinCurrency).invalidNec
     }
 
   private def validateFiatCurrencySupport(fiatCurrency: FiatCurrency): ValidationResult[FiatCurrency] =
-    if (DB.selectSupportedFiatCurrencies().contains(fiatCurrency)) {
+    if (database.selectSupportedFiatCurrencies().contains(fiatCurrency)) {
       fiatCurrency.validNec
     } else {
       UnsupportedFiatCurrency(fiatCurrency).invalidNec
     }
 
   def getPayments(currency: FiatCurrency): List[Payment] = {
-    DB.selectPaymentsByFiatCurrency(currency)
+    database.selectPaymentsByFiatCurrency(currency)
   }
 
   def findPayment(id: PaymentId): Either[PaymentNotFound, Payment] = {
-    DB.selectPaymentById(id) match {
+    database.selectPaymentById(id) match {
       case Some(value) => Right(value)
       case None        => Left(PaymentNotFound(id))
     }
@@ -92,12 +96,14 @@ class PaymentRegistry(config: PaymentConfig, exchange: Exchange)(implicit uuidGe
   // TODO: Future + Applicative?
   def getPaymentStats(fiatCurrency: FiatCurrency): PaymentStats =
     PaymentStats(
-      DB.countAllPayments(),
-      DB.countPaymentsForFiatCurrency(fiatCurrency)
+      database.countAllPayments(),
+      database.countPaymentsForFiatCurrency(fiatCurrency)
     )
 }
 
 object PaymentRegistry {
-  def apply(config: PaymentConfig, exchange: Exchange)(implicit uuidGenerator: UuidGenerator, clock: Clock) =
-    new PaymentRegistry(config, exchange)(uuidGenerator, clock)
+  def apply(config: PaymentConfig, exchange: Exchange, database: Database)(
+    implicit uuidGenerator: UuidGenerator,
+    clock: Clock
+  ) = new PaymentRegistry(config, exchange, database)(uuidGenerator, clock)
 }
