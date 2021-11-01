@@ -41,7 +41,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
   private val testClock: Clock = Clock.fixed(Instant.parse("2018-08-19T16:45:42.00Z"), ZoneOffset.UTC)
 
   val paymentRegistry: PaymentRegistry =
-    PaymentRegistry(configuration.api.payment, Exchange(ExchangeRatesSource.make()))(testUuidGenerator, testClock)
+    PaymentRegistry(configuration.api.payment, Exchange(ExchangeRatesSource()))(testUuidGenerator, testClock)
   val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
   lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
 

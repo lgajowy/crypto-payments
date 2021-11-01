@@ -7,7 +7,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class ExchangeSpec extends AnyWordSpec with Matchers {
 
-  val ratesSource: ExchangeRatesSource = ExchangeRatesSource.make()
+  val ratesSource: ExchangeRatesSource = ExchangeRatesSource()
 
   "Exchange" should {
     "should change EUR to BTC (provided both are supported)" in {
