@@ -6,6 +6,6 @@ case class Configuration(api: ApiConfig, routes: RoutesConfiguration)
 
 case class ApiConfig(payment: PaymentConfig)
 
-case class PaymentConfig(expiration: FiniteDuration, minEurAmount: Int, maxEurAmount: Int)
+case class PaymentConfig(expiration: FiniteDuration, minEurAmount: BigDecimal, maxEurAmount: BigDecimal)
 
 case class RoutesConfiguration(askTimeout: FiniteDuration)
