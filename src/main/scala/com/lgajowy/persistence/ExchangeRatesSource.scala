@@ -1,6 +1,6 @@
 package com.lgajowy.persistence
 
-import com.lgajowy.domain.{ CoinCurrency, ExchangeRate, FiatCurrency }
+import com.lgajowy.domain.{CoinCurrency, ExchangeRate, FiatCurrency}
 
 /**
   * Note: Exchange repository assumes that the exchange rate for a given

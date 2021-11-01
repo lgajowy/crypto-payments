@@ -1,12 +1,12 @@
 package com.lgajowy.http
 
-import sttp.tapir._
-import sttp.tapir.generic.auto.schemaForCaseClass
-import sttp.tapir.json.spray.jsonBody
 import com.lgajowy.http.dto.JsonFormats._
 import com.lgajowy.http.dto._
 import sttp.model.StatusCode
 import sttp.model.StatusCode.Created
+import sttp.tapir._
+import sttp.tapir.generic.auto.schemaForCaseClass
+import sttp.tapir.json.spray.jsonBody
 
 import java.util.UUID
 

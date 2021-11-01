@@ -1,15 +1,6 @@
 package com.lgajowy.persistence
 
-import com.lgajowy.domain.{
-  CoinCurrency,
-  FiatCurrency,
-  FiatCurrencyPaymentsCount,
-  Payment,
-  PaymentId,
-  TotalPaymentsCount
-}
-
-import java.util.UUID
+import com.lgajowy.domain._
 
 object DB {
 

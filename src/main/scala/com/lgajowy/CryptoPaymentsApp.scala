@@ -6,12 +6,12 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import com.lgajowy.configuration.Configuration
 import com.lgajowy.persistence.ExchangeRatesSource
-import com.lgajowy.services.{ Exchange, PaymentRegistry }
-import pureconfig.generic.auto._
+import com.lgajowy.services.{Exchange, PaymentRegistry}
+import com.lgajowy.tools.ClockProvider._
 import pureconfig.ConfigSource
-import tools.ClockProvider._
+import pureconfig.generic.auto._
 
-import scala.util.{ Failure, Success }
+import scala.util.{Failure, Success}
 
 object CryptoPaymentsApp {
 

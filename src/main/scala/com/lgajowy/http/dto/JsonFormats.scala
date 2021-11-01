@@ -1,7 +1,7 @@
 package com.lgajowy.http.dto
 
 import spray.json.DefaultJsonProtocol._
-import spray.json.{ DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat }
+import spray.json.{DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
 
 import java.time.LocalDateTime
 import java.util.UUID
