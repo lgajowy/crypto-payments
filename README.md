@@ -12,6 +12,10 @@ A simple demo application emulating crpyto payments registry. Written using:
 
 `sbt run`
 
+## API
+
+See the postman collection: in `payments-postman.json` export file.
+
 ## Encountered problems:
 
 1. The task requirements suggest using Validated (Applicative Functor) type instead of Either (a Monad). However, during
@@ -37,11 +41,4 @@ A simple demo application emulating crpyto payments registry. Written using:
 
 3. Swagger documentation. Thanks to tapir it's easy to add because we already have the description of the endpoints in
    endpoints.scala file. Tapir has an interpreter to OpenAPI files that could be utilized.
-
    
-
-
-
-
-        
-
