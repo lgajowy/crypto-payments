@@ -25,12 +25,12 @@ import java.util.UUID
 
 class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with ScalatestRouteTest {
 
-  lazy val testKit: ActorTestKit = ActorTestKit()
-  implicit def typedSystem: ActorSystem[Nothing] = testKit.system
+  private lazy val testKit: ActorTestKit = ActorTestKit()
+  private implicit def typedSystem: ActorSystem[Nothing] = testKit.system
   override def createActorSystem(): akka.actor.ActorSystem =
     testKit.system.classicSystem
 
-  val configuration: Configuration = ConfigSource.default
+  private val configuration: Configuration = ConfigSource.default
     .load[Configuration]
     .fold(
       error => throw new RuntimeException(error.toString()),
@@ -50,8 +50,8 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       testClock
     )
 
-  val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
-  lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
+  private val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
+  private lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
 
   private implicit val timeout: Timeout =
     Timeout.create(system.settings.config.getDuration("routes.ask-timeout"))
@@ -67,6 +67,16 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       }
     }
 
+    "return BAD REQUEST response when validation fails during payment creation with ErrorInfo as response body" in {
+      val paymentEntity =
+        Marshal(PaymentRequest(BigDecimal(1), "USD", "unsupportedCrypto")).to[MessageEntity].futureValue
+      val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
+      createPaymentRequest ~> routes ~> check {
+        status should ===(StatusCodes.BadRequest)
+        entityAs[ErrorInfo]
+      }
+    }
+
     "respond with no payment when there is no payment with the searched UUID" in {
       val request = HttpRequest(uri = "/payment/8ab3e8be-382b-11ec-8d3d-0242ac130003")
 
@@ -75,7 +85,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       }
     }
 
-    "respond with previously added payment " in {
+    "respond with previously added payment" in {
       val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "USD", "BTC")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
@@ -87,16 +97,20 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
       getPayment ~> routes ~> check {
         entityAs[PaymentResponse].id should ===(UUID.fromString("68a6ceae-c52e-4a94-b523-5ac16f7cf627"))
       }
-
     }
 
-    "not allow creating payment outside of the eur price range" in {
-      val paymentEntity =
-        Marshal(PaymentRequest(BigDecimal(1), "USD", "unsupportedCrypto")).to[MessageEntity].futureValue
+    "respond with a payment list" in {
+      val paymentEntity = Marshal(PaymentRequest(BigDecimal(30), "USD", "BTC")).to[MessageEntity].futureValue
       val createPaymentRequest = Post("payment/new").withEntity(paymentEntity)
       createPaymentRequest ~> routes ~> check {
-        status should ===(StatusCodes.BadRequest)
-        entityAs[ErrorInfo]
+        status should ===(StatusCodes.Created)
+      }
+
+      val request = HttpRequest(uri = "/payments?currency=USD")
+
+      request ~> routes ~> check {
+        status should ===(StatusCodes.OK)
+        entityAs[MultiplePaymentsResponse].list should not be empty
       }
     }
   }

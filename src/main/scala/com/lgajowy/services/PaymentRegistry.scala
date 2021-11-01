@@ -93,7 +93,6 @@ class PaymentRegistry(config: PaymentConfig, exchange: Exchange, database: Datab
     }
   }
 
-  // TODO: Future + Applicative?
   def getPaymentStats(fiatCurrency: FiatCurrency): PaymentStats =
     PaymentStats(
       database.countAllPayments(),
