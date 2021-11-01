@@ -1,16 +1,17 @@
 package com.lgajowy.services
 
 import com.lgajowy.configuration.PaymentConfig
-import com.lgajowy.domain._
+import com.lgajowy.domain.{ PaymentId, _ }
 import com.lgajowy.persistence.{ Database, MarketDataSource }
 import com.lgajowy.tools.UuidGenerator
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-import java.time.{ Clock, Instant, ZoneOffset }
+import java.time.{ Clock, Instant, LocalDateTime, ZoneOffset }
 import java.util.UUID
 import scala.concurrent.duration.FiniteDuration
 import org.scalatest.EitherValues._
+import org.scalatest.Inside.inside
 
 class PaymentRegistrySpec extends AnyWordSpec with Matchers {
 
@@ -18,6 +19,17 @@ class PaymentRegistrySpec extends AnyWordSpec with Matchers {
 
   private val uuidGenerator = new UuidGenerator {
     override def generate(): UUID = UUID.randomUUID()
+  }
+
+  private val databaseStub: Database = new Database {
+    override def insertPayment(payment: Payment): Unit = ()
+    override def selectPaymentsByFiatCurrency(currency: FiatCurrency): List[Payment] = List()
+    override def selectPaymentById(id: PaymentId): Option[Payment] = None
+    override def countAllPayments(): TotalPaymentsCount = TotalPaymentsCount(0)
+    override def countPaymentsForFiatCurrency(fiatCurrency: FiatCurrency): FiatCurrencyPaymentsCount =
+      FiatCurrencyPaymentsCount(0)
+    override def selectSupportedCryptoCurrencies(): List[CoinCurrency] = List()
+    override def selectSupportedFiatCurrencies(): List[FiatCurrency] = List()
   }
 
   private val database: Database = Database.make()
@@ -59,22 +71,7 @@ class PaymentRegistrySpec extends AnyWordSpec with Matchers {
       val unsupportedFiatCurrency = FiatCurrency("USD")
       val unsupportedCoinCurrency = CoinCurrency("BTC")
 
-      val databaseStub = new Database {
-        override def insertPayment(payment: Payment): Unit = ()
-        override def selectPaymentsByFiatCurrency(currency: FiatCurrency): List[Payment] = List()
-        override def selectPaymentById(id: PaymentId): Option[Payment] = None
-        override def countAllPayments(): TotalPaymentsCount = TotalPaymentsCount(0)
-        override def countPaymentsForFiatCurrency(fiatCurrency: FiatCurrency): FiatCurrencyPaymentsCount =
-          FiatCurrencyPaymentsCount(0)
-        override def selectSupportedCryptoCurrencies(): List[CoinCurrency] = List()
-        override def selectSupportedFiatCurrencies(): List[FiatCurrency] = List()
-      }
-
-      val registryToTest = PaymentRegistry(
-        config,
-        exchange,
-        databaseStub
-      )(uuidGenerator, testClock)
+      val registryToTest = PaymentRegistry(config, exchange, databaseStub)(uuidGenerator, testClock)
 
       val amount = FiatAmount(0)
       val result: Either[List[PaymentRequestValidationError], Unit] = registryToTest.createPayment(
@@ -89,6 +86,21 @@ class PaymentRegistrySpec extends AnyWordSpec with Matchers {
         UnsupportedFiatCurrency(unsupportedFiatCurrency),
         UnsupportedCryptoCurrency(unsupportedCoinCurrency)
       )
+    }
+
+    "get a payment by UUID" in {
+      val uuidValue = UUID.fromString("d183e942-a5ee-4c5f-9acb-34ac9aa40c08")
+      val customGenerator = new UuidGenerator {
+        override def generate(): UUID = uuidValue
+      }
+
+      val registryToTest = PaymentRegistry(config, exchange, database)(customGenerator, testClock)
+      registryToTest.createPayment(PaymentToCreate(FiatAmount(100), FiatCurrency("USD"), CoinCurrency("BTC")))
+
+      val paymentId = PaymentId(uuidValue)
+      val result: Either[PaymentNotFound, Payment] = registryToTest.findPayment(paymentId)
+
+      inside(result) { case Right(payment) => payment.id should ===(paymentId) }
     }
   }
 }
