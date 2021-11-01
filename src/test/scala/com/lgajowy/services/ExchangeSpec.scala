@@ -1,13 +1,18 @@
 package com.lgajowy.services
 
 import com.lgajowy.domain.{ CoinAmount, CoinCurrency, ExchangeRate, FiatAmount, FiatCurrency }
-import com.lgajowy.persistence.ExchangeRatesSource
+import com.lgajowy.persistence.MarketDataSource
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class ExchangeSpec extends AnyWordSpec with Matchers {
 
-  val ratesSource: ExchangeRatesSource = ExchangeRatesSource()
+  val ratesSource: MarketDataSource = new MarketDataSource {
+    override val exchangeRatesOfBTC: Map[String, BigDecimal] =
+      Map("EUR" -> 42000.0, "USD" -> 50000.0)
+    override val exchangeRatesToEUR: Map[String, BigDecimal] =
+      Map("EUR" -> 1.0, "USD" -> 0.84, "BTC" -> 42000.0)
+  }
 
   "Exchange" should {
     "should change EUR to BTC (provided both are supported)" in {

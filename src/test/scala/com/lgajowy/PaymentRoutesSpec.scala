@@ -11,7 +11,7 @@ import akka.util.Timeout
 import com.lgajowy.configuration.Configuration
 import com.lgajowy.http.dto.JsonFormats._
 import com.lgajowy.http.dto.{ErrorInfo, MultiplePaymentsResponse, PaymentRequest, PaymentResponse}
-import com.lgajowy.persistence.ExchangeRatesSource
+import com.lgajowy.persistence.MarketDataSource
 import com.lgajowy.services.{Exchange, PaymentRegistry}
 import com.lgajowy.tools.UuidGenerator
 import org.scalatest.concurrent.ScalaFutures
@@ -41,7 +41,7 @@ class PaymentRoutesSpec extends AnyWordSpec with Matchers with ScalaFutures with
   private val testClock: Clock = Clock.fixed(Instant.parse("2018-08-19T16:45:42.00Z"), ZoneOffset.UTC)
 
   val paymentRegistry: PaymentRegistry =
-    PaymentRegistry(configuration.api.payment, Exchange(ExchangeRatesSource()))(testUuidGenerator, testClock)
+    PaymentRegistry(configuration.api.payment, Exchange(MarketDataSource.make()))(testUuidGenerator, testClock)
   val paymentActor: ActorRef[PaymentsActor.Command] = testKit.spawn(PaymentsActor(paymentRegistry))
   lazy val routes: Route = new PaymentRoutes(configuration.routes, paymentActor).allRoutes
 

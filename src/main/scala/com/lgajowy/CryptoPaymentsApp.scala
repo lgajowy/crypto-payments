@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import com.lgajowy.configuration.Configuration
-import com.lgajowy.persistence.ExchangeRatesSource
+import com.lgajowy.persistence.MarketDataSource
 import com.lgajowy.services.{Exchange, PaymentRegistry}
 import com.lgajowy.tools.ClockProvider._
 import pureconfig.ConfigSource
@@ -27,7 +27,7 @@ object CryptoPaymentsApp {
 
   private def setupApplication(configuration: Configuration): ActorSystem[Nothing] = {
     val rootBehavior = Behaviors.setup[Nothing] { context =>
-      val paymentRegistry = PaymentRegistry(configuration.api.payment, Exchange(ExchangeRatesSource()))
+      val paymentRegistry = PaymentRegistry(configuration.api.payment, Exchange(MarketDataSource.make()))
 
       val paymentRegistryActor = context.spawn(PaymentsActor(paymentRegistry), "PaymentsRegistryActor")
       context.watch(paymentRegistryActor)
