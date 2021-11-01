@@ -19,7 +19,6 @@ object CryptoPaymentsApp {
     ConfigSource.default
       .load[Configuration]
       .fold(
-        // TODO: add better logging
         error => println(error),
         configuration => setupApplication(configuration)
       )

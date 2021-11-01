@@ -38,8 +38,8 @@ object Database {
     override def countPaymentsForFiatCurrency(fiatCurrency: FiatCurrency): FiatCurrencyPaymentsCount =
       FiatCurrencyPaymentsCount(payments.count(_.fiatCurrency == fiatCurrency))
 
-    override def selectSupportedCryptoCurrencies(): List[CoinCurrency] = cryptoCurrencies.map(CoinCurrency)
+    override def selectSupportedCryptoCurrencies(): List[CoinCurrency] = cryptoCurrencies.map(CoinCurrency.apply)
 
-    override def selectSupportedFiatCurrencies(): List[FiatCurrency] = fiatCurrencies.map(FiatCurrency)
+    override def selectSupportedFiatCurrencies(): List[FiatCurrency] = fiatCurrencies.map(FiatCurrency.apply)
   }
 }
