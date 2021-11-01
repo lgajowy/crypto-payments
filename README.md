@@ -52,14 +52,42 @@ eg:
 The advantage is that whenever a new currency needs to be added, we just add the map entries. Current design requires
 creating new fields in MarketData per new cryptocurrencies and adding new logic.
 
-2. More cryptocurrency support. Currently, the app supports only BTC.
+2. More cryptocurrency support and stats. Currently, the app supports only BTC and returns some basic statistics.
 
-3. More tests in general. I didn't test the stats endpoint much, nor did I test every corner case. I would definitely do
+3. Wrap the returned type of PaymentRegistry with `F[_]` type constructor (use the tagless final approach). Have a
+   future interpreter for it. Use the interpreter in PaymentRoutes. Example of the interface:
+
+```
+trait PaymentRegistry[F[_]](config: RoutesConfiguration, paymentsActor: ActorRef[PaymentsActor.Command]) {
+
+  def createPayment(request: PaymentRequest): F[Either[ErrorInfo, Unit]]
+
+  def findPayment(id: PaymentId): F[Either[PaymentNotFound, Payment]]
+
+  def getPaymentStats(fiatCurrency: FiatCurrency): F[PaymentStats]
+
+  def getPayments(currency: FiatCurrency): FList[Payment]
+}
+```
+
+Example interpreter cosntructor:
+
+```
+   def make[F[_]: MonadThrow, GenUuid](database: Database, marketData: MarketData) = new PaymentRegistry {...}
+```
+
+Thanks to that the code would:
+
+- utilize Future effect in the whole app. Possibly even utilize IO monad and fibers (even better).
+- use cats' typeclasses. Eg. we could use MonadError for error handling.
+- we could utilize for comprehensions (since we require a Monadic interpreter) to make the code cleaner
+
+4. More tests in general. I didn't test the stats endpoint much, nor did I test every corner case. I would definitely do
    that in a real application. Here I just wanted to demonstrate some basic testing abilities due to limited time.
 
-4. Swagger documentation instead of Postman. Thanks to tapir it's easy to add because we already have the description of
+5. Swagger documentation instead of Postman. Thanks to tapir it's easy to add because we already have the description of
    the endpoints in endpoints.scala file. Tapir has an interpreter to OpenAPI files that could be utilized.
 
-5. Property based tests. That would require providing generators for the custom types. Could prove useful in testing the
+6. Property based tests. That would require providing generators for the custom types. Could prove useful in testing the
    Exchange (I'd expect that the generative tests would find more edge cases there than me).
    
